@@ -1,0 +1,101 @@
+Industry,Criterion 1,Criterion 2,Criterion 3,Criterion 4,Criterion 5,Criterion 6,Criterion 7
+accomodation,Buildings,Energy efficiency,Renewable energies,Mobility and travel,Carbon Footprint,Sustainable food,Waste prevention
+advertising,Lifestyles,Climate communication,CO2 transparency and incentives,Climate neutral operation,Carbon Footprint,Circular solutions,Consumer protection
+agri_machinery,Sustainable agricultural products,Ecosystems,Animal Welfare,Pollution to Soil,Transportation,Carbon Footprint,Sharing
+agriculture_fishery,Sustainable agricultural products,Plant-based nutrition,Animal Welfare,Pollution to Soil,Renewable energies,Carbon Footprint,Working conditions
+architecture,Buildings,Energy efficiency,Renewable energies,Carbon Footprint,Climate resilience,Circular design,Affordability
+asset_management,Sustainable finance,Renewable energies,Climate neutral operation,Carbon Footprint,Climate risks,Circular solutions,(Financial) participation
+auditing,Climate solutions and consulting,Sustainable finance,Mobility and travel,Renewable energies,Carbon Footprint,Circular solutions,Equal Opportunity
+automotive,Transportation,Mobility and travel,Energy storage,Renewable energies,Carbon Footprint,Pollution to Air,Circular design
+baked_confectionery,Plant-based nutrition,Sustainable agricultural products,Food waste,Diversity of species,Climate neutral operation,Carbon Footprint,Cooperation
+beverage,Water conservation,Circular solutions,Packing,Reuse and recycling,Climate neutral operation,Carbon Footprint,Health
+building_material,Industrial processes,Renewable energies,Energy efficiency,Transportation,Carbon Footprint,Circular solutions,Land sealing
+building_trade,Buildings,Energy efficiency,Renewable energies,Transportation,Carbon Footprint,Materials,Occupational safety and health
+caffeine_spices,Sustainable agricultural products,Ecosystems,Food waste,Pollution to Soil,Climate neutral operation,Carbon Footprint,Cooperation
+capital_goods,Climate-friendly products,CO2 transparency and incentives,Transportation,Renewable energies,Carbon Footprint,Circular solutions,Human rights
+care,Health,Social impact,Social cohesion,Regional impact,Working conditions,Climate neutral operation,Carbon Footprint
+chemical,Energy efficiency,Renewable energies,Industrial processes,CO2 removal,Carbon Footprint,Circular solutions,Hazardous substances
+chemical_wholesale,Climate-friendly products,CO2 transparency and incentives,Transportation,Renewable energies,Carbon Footprint,Circular solutions,Hazardous substances
+cleaning_supplies,Circular design,Waste prevention,Packing,Water conservation,Energy efficiency,Carbon Footprint,Pollution to Water
+commercial,Working conditions,Equal Opportunity,Occupational safety and health,Professional education,Paper and digital,Climate neutral operation,Carbon Footprint
+construction,Buildings,Energy efficiency,Renewable energies,Climate neutral operation,Carbon Footprint,Materials,Occupational safety and health
+consumer_electronics,Energy efficiency,Smart home,Lifestyles,Climate neutral operation,Carbon Footprint,Circular solutions,Human rights
+consumer_goods_retail,Circular design,Materials,Reuse and recycling,Packing,CO2 transparency and incentives,Carbon Footprint,Human rights
+consumer_goods_wholesale,Climate-friendly products,Transportation,Energy efficiency,Renewable energies,Carbon Footprint,Circular solutions,Human rights
+control,Energy efficiency,Renewable energies,Green IT & coding,Climate neutral operation,Carbon Footprint,Resource efficiency,Human rights
+conveying,Transportation,Energy efficiency,Renewable energies,Climate neutral operation,Carbon Footprint,Circular solutions,Occupational safety and health
+cosmetics,Circular design,Waste prevention,Packing,Water conservation,Energy efficiency,Carbon Footprint,Diversity of species
+credit_institution,Sustainable finance,Renewable energies,Climate neutral operation,Carbon Footprint,Climate risks,Paper and digital,(Financial) participation
+cultural,Education,Social cohesion,Social impact,Regional impact,Climate neutral operation,Carbon Footprint,Working conditions
+diy,Circular design,Materials,Reuse and recycling,Packing,Buildings,Carbon Footprint,Human rights
+electronics,Energy efficiency,Renewable energies,Green IT & coding,Climate neutral operation,Carbon Footprint,Circular solutions,Human rights
+energy_generation,Renewable energies,Energy efficiency,Climate-friendly products,Climate neutral operation,Carbon Footprint,Circular solutions,Ecosystems
+energy_manufacture,Energy storage,Renewable energies,Smart grid,Energy efficiency,Carbon Footprint,Circular solutions,Human rights
+energy_production,Renewable energies,Energy efficiency,Energy storage,Smart grid,Carbon Footprint,Ecosystems,(Financial) participation
+energy_storage,Energy storage,Smart grid,Renewable energies,Energy efficiency,Carbon Footprint,Circular solutions,(Financial) participation
+engines,Energy efficiency,Renewable energies,Industrial processes,Climate neutral operation,Carbon Footprint,Pollution to Air,Occupational safety and health
+event,Buildings,Mobility and travel,Energy efficiency,Renewable energies,Carbon Footprint,Circular solutions,Sustainable food
+feed,Sustainable agricultural products,Plant-based nutrition,Animal Welfare,Ecosystems,Agriculture emissions,Carbon Footprint,Packing
+financial_services,Sustainable finance,CO2 transparency and incentives,Climate neutral operation,Carbon Footprint,Climate risks,Paper and digital,Social impact
+food_processing,Plant-based nutrition,Sustainable agricultural products,Food waste,Pollution to Soil,Climate neutral operation,Carbon Footprint,Regional impact
+food_retail,Plant-based nutrition,Sustainable food,Food waste,Animal Welfare,Climate neutral operation,Carbon Footprint,Packing
+food_wholesale,Plant-based nutrition,Sustainable food,Food waste,Animal Welfare,Transportation,Carbon Footprint,Packing
+forestry_management,Sustainable forestry,Ecosystems,Sustainable agricultural products,Pollution to Soil,CO2 removal,Carbon Footprint,Working conditions
+fuel,Renewable energies,Energy efficiency,Industrial processes,CO2 removal,Carbon Footprint,Circular solutions,Pollution to Air
+furniture,Circular design,Circular solutions,Resource efficiency,Reuse and recycling,Climate neutral operation,Carbon Footprint,Sustainable forestry
+furniture_trade,Energy efficiency,Smart home,Renewable energies,Transportation,Carbon Footprint,Circular solutions,Human rights
+gastronomy,Plant-based nutrition,Sustainable food,Food waste,Animal Welfare,Climate neutral operation,Carbon Footprint,Packing
+glass,Circular design,Materials,Resource efficiency,Reuse and recycling,Climate neutral operation,Carbon Footprint,Ecosystems
+health_care,Health,Affordability,Social impact,Data protection,Working conditions,Climate neutral operation,Carbon Footprint
+health_insurance,Health,Affordability,Consumer protection,Data protection,Sustainable finance,Carbon Footprint,Paper and digital
+household,Energy efficiency,Smart home,Lifestyles,Climate neutral operation,Carbon Footprint,Circular solutions,Human rights
+hydraulics,Energy efficiency,Renewable energies,Industrial processes,Climate neutral operation,Carbon Footprint,Water conservation,Occupational safety and health
+insurances,Sustainable finance,CO2 transparency and incentives,Climate neutral operation,Carbon Footprint,Climate risks,Paper and digital,Social impact
+it,Green IT & coding,Energy efficiency,Renewable energies,Climate neutral operation,Carbon Footprint,Circular solutions,Human rights
+it_services,Climate solutions and consulting,Green IT & coding,Mobility and travel,Climate neutral operation,Carbon Footprint,Circular solutions,Equal Opportunity
+jewelry,Human rights,Cooperation,Social development,Occupational safety and health,Materials,Climate neutral operation,Carbon Footprint
+leasing,Climate solutions and consulting,Energy efficiency,Renewable energies,Carbon Footprint,Climate resilience,Circular solutions,Working conditions
+leisure_industry,Health,Social cohesion,Social impact,Regional impact,Climate neutral operation,Carbon Footprint,Working conditions
+mechanicals,Energy efficiency,Renewable energies,Industrial processes,Climate neutral operation,Carbon Footprint,Circular solutions,Occupational safety and health
+media,Climate communication,Climate solutions and consulting,Climate neutral operation,Carbon Footprint,Climate risks,Equal Opportunity,Social cohesion
+medical,Health,Social impact,Affordability,Data protection,Climate neutral operation,Carbon Footprint,Circular solutions
+metal,Industrial processes,Energy efficiency,Renewable energies,CO2 removal,Carbon Footprint,Reuse and recycling,Occupational safety and health
+metal_processing,Climate-friendly products,Energy efficiency,Renewable energies,Transportation,Carbon Footprint,Reuse and recycling,Occupational safety and health
+milk,Plant-based nutrition,Sustainable agricultural products,Animal Welfare,Food waste,Climate neutral operation,Carbon Footprint,Regional impact
+mobility_services,Mobility and travel,Renewable energies,CO2 transparency and incentives,Climate neutral operation,Carbon Footprint,Sharing,Health
+office_supplies,Circular design,Materials,Paper and digital,Packing,Climate neutral operation,Carbon Footprint,Sustainable forestry
+other_food,Plant-based nutrition,Sustainable agricultural products,Food waste,Diversity of species,Climate neutral operation,Carbon Footprint,Health
+packaging,Circular design,Circular solutions,Materials,Reuse and recycling,Pollution to Water,Carbon Footprint,Climate neutral operation
+paint,Materials,Resource efficiency,Circular design,Water conservation,Climate neutral operation,Carbon Footprint,Hazardous substances
+paper,Paper and digital,Resource efficiency,Reuse and recycling,Water conservation,Sustainable forestry,Climate neutral operation,Carbon Footprint
+personal_services,Health,Social impact,Consumer protection,Data protection,Working conditions,Climate neutral operation,Carbon Footprint
+pharmaceutical,Health,Affordability,Social impact,Consumer protection,Diversity of species,Climate neutral operation,Carbon Footprint
+pharmacy,Health,Affordability,Social impact,Consumer protection,Climate neutral operation,Carbon Footprint,Paper and digital
+plastic,Circular design,Materials,Resource efficiency,Reuse and recycling,Climate neutral operation,Carbon Footprint,Pollution to Water
+printers,Paper and digital,Resource efficiency,Reuse and recycling,Water conservation,Hazardous substances,Climate neutral operation,Carbon Footprint
+protein,Plant-based nutrition,Sustainable agricultural products,Animal Welfare,Food waste,Climate neutral operation,Carbon Footprint,Working conditions
+raw,Materials,Resource efficiency,Reuse and recycling,Waste and emissions,Human rights,Carbon Footprint,Climate neutral operation
+real_estate,Energy efficiency,Renewable energies,Mobility and travel,Carbon Footprint,Climate resilience,Materials,Affordability
+recruitment,Working conditions,Equal Opportunity,Occupational safety and health,Professional education,Regional impact,Mobility and travel,Carbon Footprint
+recycling,Circular solutions,Waste prevention,Reuse and recycling,Waste and emissions,Climate neutral operation,Carbon Footprint,Working conditions
+repair,Circular solutions,Reuse and recycling,Waste prevention,Waste and emissions,Climate neutral operation,Carbon Footprint,Working conditions
+research,Climate solutions and consulting,Climate communication,Climate neutral operation,Carbon Footprint,Climate risks,Circular solutions,Equal Opportunity
+sanitation,Water conservation,Water cycles,Materials,Resource efficiency,Energy efficiency,Carbon Footprint,Health
+schooling,Education,Health,Social impact,Social cohesion,Climate neutral operation,Carbon Footprint,Sustainable food
+sport_articles,Circular design,Materials,Reuse and recycling,Packing,Climate neutral operation,Carbon Footprint,Human rights
+sport_industry,Health,Social impact,Social cohesion,Education,Climate neutral operation,Carbon Footprint,Professional education
+sporting,Circular design,Materials,Reuse and recycling,Packing,Climate neutral operation,Carbon Footprint,Health
+telecommunication,Digital access,Education,Data protection,Consumer protection,Climate neutral operation,Carbon Footprint,Circular solutions
+textile_retail,Circular design,Materials,Circular solutions,Reuse and recycling,Climate neutral operation,Carbon Footprint,Human rights
+textiles,Human rights,Cooperation,Social development,Occupational safety and health,Materials,Climate neutral operation,Carbon Footprint
+tourism,Mobility and travel,Renewable energies,Climate neutral operation,Carbon Footprint,Climate resilience,Ecosystems,Regional impact
+toys,Circular design,Materials,Reuse and recycling,Packing,Climate neutral operation,Carbon Footprint,Education
+training,Education,Social impact,Social cohesion,Regional impact,Working conditions,Climate neutral operation,Carbon Footprint
+transportation,Transportation,Energy efficiency,Renewable energies,Buildings,Carbon Footprint,Circular solutions,Working conditions
+transportation_infrastructure,Transportation,Mobility and travel,Climate neutral operation,Carbon Footprint,Climate resilience,Land sealing,Materials
+transportations_building,Transportation,Mobility and travel,Renewable energies,Energy efficiency,Carbon Footprint,Pollution to Air,Materials
+two_wheeler,Mobility and travel,Transportation,Lifestyles,Energy storage,Carbon Footprint,Circular solutions,Health
+vehicle,Mobility and travel,Transportation,Energy efficiency,Renewable energies,Carbon Footprint,Reuse and recycling,Occupational safety and health
+ventilation,Renewable energies,Energy efficiency,Energy storage,Climate neutral operation,Carbon Footprint,Materials,Professional education
+water_supply,Water cycles,Water conservation,Water storage,Reuse and recycling,Climate neutral operation,Carbon Footprint,Pollution to Water
+wood_processing,Circular design,Resource efficiency,Reuse and recycling,Waste prevention,Sustainable forestry,Climate neutral operation,Carbon Footprint

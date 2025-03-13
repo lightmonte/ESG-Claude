@@ -1,0 +1,5 @@
+name,url,industry,shouldUpdate
+Google,https://www.gstatic.com/gumdrop/sustainability/google-2023-environmental-report.pdf,technology,true
+Microsoft,https://query.prod.cms.rt.microsoft.com/cms/api/am/binary/RE5bq0G,technology,true
+Nestlé,https://www.nestle.com/sites/default/files/2023-03/creating-shared-value-sustainability-report-2022-en.pdf,food_processing,true
+Starbucks,https://stories.starbucks.com/uploads/2023/01/Starbucks-2021-Global-Environmental-and-Social-Impact-Report.pdf,caffeine_spices,true

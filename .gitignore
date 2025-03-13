@@ -1,0 +1,20 @@
+# Environment variables
+.env
+
+# Dependency directories
+node_modules/
+
+# Data and output
+data/**/*.pdf
+data/**/*.txt
+data/**/*.json
+data/esg_database.sqlite
+output/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
