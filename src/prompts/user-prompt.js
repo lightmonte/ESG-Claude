@@ -18,8 +18,8 @@ export function createUserPrompt(documentUrl, relevantCriteria, options = {}) {
     includeCriteriaDescriptions = true,
     maxActions = 5,
     isBatch = false,
-    contentType = 'pdf',  // 'pdf' or 'website'
-    websiteContent = null // For website content extraction
+    contentType = 'pdf',
+    websiteContent = null
   } = options;
   
   // Format criteria list for the prompt with descriptions and keywords
@@ -31,11 +31,15 @@ export function createUserPrompt(documentUrl, relevantCriteria, options = {}) {
   // Different intro based on content type
   let promptIntro;
   if (contentType === 'pdf') {
-    promptIntro = `Extract ESG information from the sustainability report at URL: ${documentUrl}`;
+    promptIntro = `Extract ESG information from the sustainability report at URL: ${documentUrl}
+
+IMPORTANT: First read the entire document to understand the company's overall sustainability approach before attempting extraction.`;
   } else {
     promptIntro = `Extract ESG information from the website at URL: ${documentUrl}
 
-The website content has been extracted and is provided below:`;
+The website content has been extracted and is provided below.
+
+IMPORTANT: First read the entire content to understand the company's overall sustainability approach before attempting extraction.`;
     
     // If we have website content, append it to the prompt
     if (websiteContent) {
@@ -44,7 +48,15 @@ The website content has been extracted and is provided below:`;
   }
   
   return `${promptIntro}
-
+EXTRACTION PROCESS:
+  1. First, analyze the entire document comprehensively before extracting data
+  2. For each extraction point:
+     - Quote the relevant text from the document
+     - Explain your reasoning for this extraction
+     - Note any ambiguities or missing information
+     - Rate your confidence (High/Medium/Low)
+  3. Then produce a final JSON output with the exact structure shown below
+  
 Extract information for EXACTLY the following ${relevantCriteria.length} ESG criteria (no more, no less):
 ${criteriaList}
 
@@ -70,14 +82,53 @@ Your goal is to extract the following information:
 08. Other important sustainability initiatives
 09. Any sustainability-related controversies and company responses
 
-For each criterion, extract:
-- Maximum ${maxActions} concrete actions/solutions the company is taking, including any supporting numbers, percentages, and specific technical details
-- List solutions for customers first, followed by internal actions (actions = internal measures implemented by the company, while solutions are products/services offered to customers that improve sustainability)
-- For each action/solution, identify relevant direct text excerpts from the document that support it
-- Format each action/solution as a bullet point with "# " followed by a concise description with specific details
-- Keep each action/solution under 150 characters using original phrasing, terminology, and numerical values from the document
-- Include quantitative information wherever available (numbers, percentages, years, etc.)
- 
+EXTRACTION RULES:
+1. For company information:
+   - Extract EXACTLY as stated in the document
+   - Use "Not found" when information is not explicitly provided
+   - DO NOT create information not present in the document
+   - For addresses, extract separate fields (street, zip, city, country) as found
+
+2. For each criterion, extract:
+   - Maximum ${maxActions} concrete actions/solutions
+   - List solutions for customers FIRST, followed by internal actions
+   - Focus on IMPLEMENTED actions with SPECIFIC DETAILS rather than future plans or general statements
+   - Include NUMERICAL VALUES whenever available (e.g., percentages, quantities, timeframes)
+   - Include technical specifications when present (e.g., equipment types, material details)
+   - Format each action/solution with "# " prefix and keep under 150 characters
+   - Maintain original language, terminology, and numerical values from the document
+
+3. For carbon footprint data:
+   - Extract scope 1, 2, 3 and total emissions for each year mentioned (2022-2024)
+   - Use consistent format: "x.xxx t CO2e" for all values
+   - If emissions are reported in other units, convert them if conversion factor is provided
+   - If emissions are not reported for certain scopes or years, use empty strings
+   - If no emissions data is found at all, set all values to empty strings
+
+4. For standards compliance:
+   - Mark as "Yes" ONLY if the document explicitly states current certification
+   - Mark as "In progress" if working toward certification
+   - Mark as "No" or leave empty if not mentioned
+   - Include certification date/year when available
+
+5. For highlights:
+   - Choose initiatives with SPECIFIC IMPACTS over general commitments
+   - Select initiatives with NUMERICAL RESULTS when available
+   - For courage: select most innovative or challenging initiative
+   - For action: select initiative with largest reported internal impact
+   - For solution: select customer-facing solution with most substantial impact
+
+HALLUCINATION PREVENTION:
+1. ONLY include information EXPLICITLY stated in the document
+2. DO NOT infer, assume, or create information not directly present
+3. Use phrases directly from the document whenever possible
+4. When information is absent, use "Not found" or "Not stated" rather than creating placeholder content
+5. If data seems contradictory within the document, note the discrepancy rather than resolving it
+6. For actions, prioritize SPECIFICITY over quantity - it's better to have fewer detailed actions than many vague ones
+7. Distinguish between IMPLEMENTED actions and PLANNED initiatives
+8. If the source doesn't provide sufficient information for a criterion, include an action stating: "# No specific actions found for [CRITERION NAME]"
+9. If the source mentions a program name without details, state: "# [Program Name] mentioned but no specific details provided"
+
 Format your response as a JSON object with this structure:
 {
   "companyDetails": {
@@ -136,31 +187,17 @@ ${criteriaStructure},
   "controversies": "Any sustainability-related controversies in the last five years and company responses (max 1000 chars)"
 }
 
-FORMATTING REQUIREMENTS (CRITICAL):
-1. Include EXACTLY the ${relevantCriteria.length} criteria listed above with their exact IDs as shown - do not add or remove any criteria
-2. Include up to ${maxActions} actions/solutions per criterion - more is better if they are substantive and detailed
-3. For criteria with no information, include an action with "# No specific actions found for [CRITERION NAME]"
-4. Include ONLY information explicitly stated in the document
-5. Look carefully for company information such as legal entity name, business description, address, founding year, employee count, and revenue
-6. Generate the results in the document's original language (German or English) - don't translate
-7. Use original wording from the document wherever possible
-8. For carbon emissions, use x.xxx t CO2e format (calculate if needed)
-9. Carbon footprint data is typically found in sections related to climate protection, emissions reporting, or environmental indicators
-10. Format actions/solutions like this example: "# Reduktion der Temperatur in allen Fertigungshallen von 18–20°C um 4°C" or this example: "# Über 2.500 DGNB-zertifizierte Kundenhäuser bis Ende 2018 mit Gold- oder Platin-Status"
-11. Each action/solution should include specific details, numbers and technical information from the document
-12. For highlights, select the most impactful initiatives showing entrepreneurial courage, internal progress, and customer impact
-13. For controversies, only include information if explicitly mentioned in the document
-14. When a data point does not exist in the document, use "Not stated" or "Not found"
-
 FINAL VERIFICATION:
 Before submitting, verify that:
-1. You've included only information explicitly stated in the document
-2. All actions/solutions are formatted correctly with "#" and under 150 characters
-3. You've addressed all ${relevantCriteria.length} required criteria
-4. Your output is valid, parseable JSON
-5. You've preserved the original language of the document
+1. You've included ONLY information explicitly stated in the document
+2. Your output contains NO hallucinated or inferred information
+3. All actions/solutions are formatted correctly with "#" prefix
+4. You've addressed all ${relevantCriteria.length} required criteria
+5. Your output is valid, parseable JSON without any text before or after
+6. You've preserved the original language of the document (German or English)
+7. You've used exactly the same field structure as shown above
 
-Your response MUST be valid JSON that can be parsed with JSON.parse().`;
+Your response MUST be valid JSON that can be parsed with JSON.parse() - no additional text, no markdown formatting, no code blocks.`;
 }
 
 /**
