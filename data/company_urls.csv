@@ -1,9 +1,9 @@
 name,url,industry,shouldUpdate
 1&1 Telecommunication,https://imagepool.1und1.ag/v2/download/nachhaltigkeitsbericht/1und1-AG_NB_2022_DE.pdf,telecommunication,FALSE
-ADM,https://www.adm.com/globalassets/sustainability/sustainability-reports/2022-reports/adm-2022-corporate-sustainability-report_final.pdf,food_processing,TRUE
-AHT,https://www.aht.at/wp-content/uploads/2022/10/AHT_ESG_Report_2022_Final_DE.pdf,ventilation,TRUE
-AQUApark Oberhausen,https://www.aquapark-oberhausen.com/nachhaltigkeit,leisure_industry,FALSE
-ARB,https://arche-reinigung.de/unternehmen/Nachhaltigkeit,commercial,FALSE
+ADM,https://www.adm.com/globalassets/sustainability/sustainability-reports/2022-reports/adm-2022-corporate-sustainability-report_final.pdf,food_processing,FALSE
+AHT,https://www.aht.at/wp-content/uploads/2022/10/AHT_ESG_Report_2022_Final_DE.pdf,ventilation,FALSE
+AQUApark Oberhausen,https://www.aquapark-oberhausen.com/nachhaltigkeit,leisure_industry,TRUE
+ARB,https://arche-reinigung.de/unternehmen/Nachhaltigkeit,commercial,TRUE
 BOK 24,https://boc24.de/pages/wir-sind-auf-dem-weg,sporting,FALSE
 BUWOG,https://www.buwog.at/nachhaltigkeit,real_estate,FALSE
 Bauer Gear Motor,https://www.bauergears.com/de-DE/energy-efficiency/energy-efficiency-resources,engines,FALSE
@@ -13,9 +13,9 @@ GOLDBECK,https://cms.goldbeck.de/fileadmin/goldbeck.de/00_newsroom/prospekte/gol
 Bau-Fritz,https://www.baufritz.com/Dokumente/Umweltbericht/Umwelterklaerung.pdf,construction,FALSE
 PORR,https://porr-group.com/fileadmin/s_porr-group/IR/Konzernberichte/2023/PORR_Gescha__ftsbericht_2022_de_sec.pdf,construction,FALSE
 Espresso House Germany,https://cdn.sanity.io/files/0znjtmk5/productionv3/05d356751a3089056ce21cfd4b07398a772f73a3.pdf,food_retail,FALSE
-Wolff & Müller,https://www.wolff-mueller.de/fileadmin/Home_W_M/Top_Navigation/News___Medien/Medien/WM-475-478-22_Nachhaltigkeitsbericht_2022_gesamt_RZ_Web_231129.pdf,construction,TRUE
-DFH Deutsche Fertighaus,https://dfh-gruppe.de/wp-content/uploads/2024/09/DFH_Nachhaltigkeitsbericht_2018_web.pdf,construction,TRUE
-Bilfinger,https://www.bilfinger.com/fileadmin/One_Global_Website/Investors/overview/non-financial-reporting/Bilfinger-Nichtfinanzielle_Konzernerklaerung_2023.pdf,construction,TRUE
-BAUER,https://www.bauer.de/de/media/4810/download?inline,construction,TRUE
+Wolff & Müller,https://www.wolff-mueller.de/fileadmin/Home_W_M/Top_Navigation/News___Medien/Medien/WM-475-478-22_Nachhaltigkeitsbericht_2022_gesamt_RZ_Web_231129.pdf,construction,FALSE
+DFH Deutsche Fertighaus,https://dfh-gruppe.de/wp-content/uploads/2024/09/DFH_Nachhaltigkeitsbericht_2018_web.pdf,construction,FALSE
+Bilfinger,https://www.bilfinger.com/fileadmin/One_Global_Website/Investors/overview/non-financial-reporting/Bilfinger-Nichtfinanzielle_Konzernerklaerung_2023.pdf,construction,FALSE
+BAUER,https://www.bauer.de/de/media/4810/download?inline,construction,FALSE
 Hünnebeck Deutschland,https://datenbank2.deutscher-nachhaltigkeitskodex.de/Profile/CompanyProfile/13778/de/2020/dnk#,construction,FALSE
 HOCHTIEF,https://www.hochtief.de/mmdbdownload?id=229173,construction,FALSE

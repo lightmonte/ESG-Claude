@@ -42,14 +42,37 @@ async function loadCriteriaFromCsv() {
     
     console.log(`Loading industry criteria from ${criteriaFilePath}`);
     
+    // Check if the CSV file exists
+    try {
+      await fs.access(criteriaFilePath);
+    } catch (accessError) {
+      console.error(`Criteria file not found: ${criteriaFilePath}`);
+      console.log('Falling back to default criteria for all industries.');
+      isLoaded = true; // Prevent continuous file access attempts
+      return;
+    }
+    
     // Read the CSV file
     const fileContent = await fs.readFile(criteriaFilePath, 'utf8');
+    
+    if (!fileContent || fileContent.trim().length === 0) {
+      console.error('Criteria file is empty, using default criteria.');
+      isLoaded = true;
+      return;
+    }
     
     // Parse the CSV content (skip the header row)
     const records = parse(fileContent, {
       columns: true,
-      skip_empty_lines: true
+      skip_empty_lines: true,
+      trim: true
     });
+    
+    if (!records || records.length === 0) {
+      console.error('No criteria records found after parsing, using default criteria.');
+      isLoaded = true;
+      return;
+    }
     
     // Transform the records into our format
     records.forEach(record => {
@@ -75,7 +98,8 @@ async function loadCriteriaFromCsv() {
     isLoaded = true;
   } catch (error) {
     console.error(`Error loading industry criteria: ${error.message}`);
-    throw error;
+    console.log('Falling back to default criteria due to error.');
+    isLoaded = true; // Prevent continuous file access attempts
   }
 }
 

@@ -8,7 +8,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import config from './config.js';
-import { logToFile, concurrentMap, sleep, ensureDirectoryExists } from './utils.js';
+import { logToFile, concurrentMap, sleep, ensureDirectoryExists, validatePdfUrl, validateWebsiteUrl, determineUrlType } from './utils.js';
 import Anthropic from '@anthropic-ai/sdk';
 import tokenTracker from './lib/token-tracker.js';
 import * as persistence from './lib/persistence.js';
@@ -16,6 +16,7 @@ import esgCriteria from './lib/esg-criteria.js';
 import errorHandler from './lib/error-handler.js';
 import systemPrompt from './prompts/system-prompt.js';
 import userPrompt from './prompts/user-prompt.js';
+import websiteExtractor from './lib/extractors/website-extractor.js';
 
 // Initialize the Claude client
 const anthropic = new Anthropic({
@@ -54,9 +55,9 @@ async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 2000) {
 }
 
 /**
- * Extract structured ESG data directly from a PDF URL
+ * Extract structured ESG data from a source (PDF URL or website)
  */
-export async function extractDataFromPdfUrl(company) {
+export async function extractDataFromUrl(company) {
   const { companyId, name, url, industry, shouldUpdate } = company;
   
   // Skip if URL is missing
@@ -64,7 +65,32 @@ export async function extractDataFromPdfUrl(company) {
     return { 
       ...company, 
       status: 'extraction_skipped',
-      message: 'PDF URL not available'
+      message: 'URL not available'
+    };
+  }
+  
+  // Determine the type of URL (pdf, website, unknown)
+  const urlType = determineUrlType(url);
+  console.log(`URL type for ${companyId}: ${urlType}`);
+  
+  // Handle unknown URL type
+  if (urlType === 'unknown') {
+    console.warn(`The URL for ${companyId} does not appear to be a valid PDF or website: ${url}`);
+    console.log(`The URL should be a valid PDF or website starting with http:// or https://`);
+    
+    // Update persistence with warning status
+    await persistence.updateCompany(companyId, name, url);
+    await persistence.updateProcessingStatus(
+      companyId, 
+      'extraction', 
+      'extraction_skipped', 
+      'URL does not appear to be a valid PDF or website'
+    );
+    
+    return { 
+      ...company, 
+      status: 'extraction_skipped',
+      message: 'URL does not appear to be a valid PDF or website'
     };
   }
   
@@ -79,7 +105,12 @@ export async function extractDataFromPdfUrl(company) {
   }
   
   try {
-    console.log(`Extracting ESG data from PDF URL for ${companyId}: ${url}`);
+    // Log extraction based on URL type
+    if (urlType === 'pdf') {
+      console.log(`Extracting ESG data from PDF URL for ${companyId}: ${url}`);
+    } else { // website
+      console.log(`Extracting ESG data from website for ${companyId}: ${url}`);
+    }
     console.log(`Industry: ${industry || 'not specified'}`);
     
     // Use the industry as-is from the hardcoded data
@@ -94,13 +125,55 @@ export async function extractDataFromPdfUrl(company) {
     const criteriaNames = relevantCriteria.map(c => c.name_en || c.id);
     console.log('Criteria used:', criteriaNames.join(', '));
     
-    // Create the extraction prompt
-    const sysPrompt = systemPrompt.createSystemPrompt(normalizedIndustry);
-    const usrPrompt = userPrompt.createUserPrompt(url, relevantCriteria, {
-      includeCriteriaDescriptions: false,
-      maxActions: 5,
-      isBatch: false
-    });
+    // Create the system prompt with the appropriate content type
+    const sysPrompt = systemPrompt.createSystemPrompt(normalizedIndustry, false, urlType);
+    
+    // Different handling based on URL type
+    let usrPrompt;
+    let extractedWebContent = null;
+    
+    if (urlType === 'pdf') {
+      // For PDFs, create the user prompt with the PDF URL
+      usrPrompt = userPrompt.createUserPrompt(url, relevantCriteria, {
+        includeCriteriaDescriptions: false,
+        maxActions: 5,
+        isBatch: false,
+        contentType: 'pdf'
+      });
+    } else {
+      // For websites, extract the content first
+      console.log(`Extracting content from website: ${url}`);
+      try {
+        extractedWebContent = await websiteExtractor.extractWebsiteContent(url);
+        console.log(`Successfully extracted website content: ${extractedWebContent.title}`);
+        
+        // Format the content for Claude
+        const formattedContent = websiteExtractor.formatWebsiteContentForClaude(extractedWebContent);
+        
+        // Create the user prompt with the website content
+        usrPrompt = userPrompt.createUserPrompt(url, relevantCriteria, {
+          includeCriteriaDescriptions: false,
+          maxActions: 5,
+          isBatch: false,
+          contentType: 'website',
+          websiteContent: formattedContent
+        });
+      } catch (extractionError) {
+        console.error(`Failed to extract website content: ${extractionError.message}`);
+        // Update persistence with error status
+        await persistence.updateProcessingStatus(
+          companyId,
+          'extraction',
+          'extraction_failed',
+          `Website content extraction failed: ${extractionError.message}`
+        );
+        return {
+          ...company,
+          error: `Website content extraction failed: ${extractionError.message}`,
+          status: 'extraction_failed'
+        };
+      }
+    }
     
     console.log(`Sending prompt to Claude for ${companyId}...`);
     
@@ -145,60 +218,120 @@ export async function extractDataFromPdfUrl(company) {
       responseText
     );
     
-    // Let's try to extract JSON properly
+    // Let's try to extract JSON properly with enhanced parsing techniques
     console.log(`Parsing response for ${companyId}...`);
     
-    // Try different extraction strategies
+    // Try multiple extraction strategies in order of reliability
     let extractedJson;
     let parseSuccess = false;
+    let parseErrors = [];
     
     // Strategy 1: Simple JSON.parse if it's already valid JSON
     try {
-      if (responseText.trim().startsWith('{') && responseText.trim().endsWith('}')) {
-        extractedJson = JSON.parse(responseText.trim());
+      const trimmedResponse = responseText.trim();
+      if (trimmedResponse.startsWith('{') && trimmedResponse.endsWith('}')) {
+        extractedJson = JSON.parse(trimmedResponse);
         parseSuccess = true;
         console.log(`Successfully parsed JSON directly for ${companyId}`);
       }
     } catch (parseError) {
+      parseErrors.push(`Direct JSON parsing: ${parseError.message}`);
       console.log(`Direct JSON parsing failed: ${parseError.message}`);
     }
     
-    // Strategy 2: Try to extract JSON from markdown code blocks
+    // Strategy 2: Try to extract JSON from markdown code blocks (more aggressive matching)
     if (!parseSuccess) {
       try {
-        const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-        if (jsonMatch && jsonMatch[1]) {
-          extractedJson = JSON.parse(jsonMatch[1].trim());
-          parseSuccess = true;
-          console.log(`Successfully extracted JSON from code block for ${companyId}`);
+        // Match both ```json and ``` format code blocks
+        const jsonMatches = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/g);
+        if (jsonMatches && jsonMatches.length > 0) {
+          // Try each code block until one succeeds
+          for (const match of jsonMatches) {
+            try {
+              const content = match.replace(/```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
+              if (content.startsWith('{') && content.endsWith('}')) {
+                extractedJson = JSON.parse(content);
+                parseSuccess = true;
+                console.log(`Successfully extracted JSON from code block for ${companyId}`);
+                break;
+              }
+            } catch (blockError) {
+              // Continue to next block
+              console.log(`Code block parsing attempt failed, trying next block...`);
+            }
+          }
+        }
+        
+        if (!parseSuccess && jsonMatches) {
+          parseErrors.push(`Code block extraction: Found ${jsonMatches.length} potential blocks but none parsed successfully`);
         }
       } catch (codeBlockError) {
+        parseErrors.push(`Code block extraction: ${codeBlockError.message}`);
         console.log(`Code block JSON parsing failed: ${codeBlockError.message}`);
       }
     }
     
-    // Strategy 3: Try to extract anything that looks like a JSON object
+    // Strategy 3: Try to extract anything that looks like a complete JSON object
     if (!parseSuccess) {
       try {
-        const potentialJson = responseText.match(/{[\s\S]*}/);
-        if (potentialJson && potentialJson[0]) {
-          extractedJson = JSON.parse(potentialJson[0]);
-          parseSuccess = true;
-          console.log(`Successfully extracted JSON object from text for ${companyId}`);
+        // Find all potential JSON objects - looking for balanced {} with at least some content
+        const potentialObjects = [];
+        let depth = 0;
+        let start = -1;
+        
+        for (let i = 0; i < responseText.length; i++) {
+          if (responseText[i] === '{') {
+            if (depth === 0) start = i;
+            depth++;
+          } else if (responseText[i] === '}') {
+            depth--;
+            if (depth === 0 && start !== -1) {
+              potentialObjects.push(responseText.substring(start, i + 1));
+              start = -1;
+            }
+          }
+        }
+        
+        // Try each potential object
+        for (const obj of potentialObjects) {
+          if (obj.length > 50) { // Only try substantive objects to avoid fragments
+            try {
+              extractedJson = JSON.parse(obj);
+              parseSuccess = true;
+              console.log(`Successfully extracted complete JSON object from text for ${companyId}`);
+              break;
+            } catch (objError) {
+              // Try next object
+            }
+          }
+        }
+        
+        if (!parseSuccess && potentialObjects.length > 0) {
+          parseErrors.push(`JSON object extraction: Found ${potentialObjects.length} potential objects but none parsed successfully`);
         }
       } catch (objectError) {
+        parseErrors.push(`JSON object extraction: ${objectError.message}`);
         console.log(`JSON object extraction failed: ${objectError.message}`);
       }
     }
     
-    // Use the shared parser as a fallback
+    // Strategy 4: Use the shared parser as a fallback
     if (!parseSuccess) {
       console.log(`Falling back to shared parser for ${companyId}...`);
       const parseResult = errorHandler.parseJSON(responseText);
       parseSuccess = parseResult.success;
       if (parseSuccess) {
         extractedJson = parseResult.data;
+        console.log(`Successfully parsed JSON using the shared parser for ${companyId}`);
+      } else {
+        parseErrors.push(`Shared parser: ${parseResult.message || 'Failed with no specific error'}`);
       }
+    }
+    
+    // Log detailed parsing attempts if all failed
+    if (!parseSuccess) {
+      console.error(`All JSON parsing strategies failed for ${companyId}:`);
+      parseErrors.forEach((error, i) => console.error(`  Strategy ${i+1}: ${error}`));
     }
     
     if (parseSuccess) {
@@ -206,6 +339,9 @@ export async function extractDataFromPdfUrl(company) {
       
       // Add the industry to the extracted data
       extractedData.industry = normalizedIndustry;
+      
+      // Add the source type (pdf or website)
+      extractedData.sourceType = urlType;
       
       // If there are any missing criteria, add empty placeholders
       relevantCriteria.forEach(criterion => {
@@ -239,6 +375,7 @@ export async function extractDataFromPdfUrl(company) {
         url,
         industry: normalizedIndustry,
         extractedData,
+        sourceType: urlType,
         status: 'extraction_complete'
       };
     } else {
@@ -282,6 +419,7 @@ export async function extractDataFromPdfUrl(company) {
         rawResponse: responseText,
         fallbackData, // Include our simple fallback data
         error: errorMessage,
+        sourceType: urlType,
         status: 'extraction_failed'
       };
     }
@@ -306,6 +444,7 @@ export async function extractDataFromPdfUrl(company) {
       url,
       industry: normalizedIndustry,
       error: error.message,
+      sourceType: urlType,
       status: 'extraction_failed'
     };
   }
@@ -315,12 +454,12 @@ export async function extractDataFromPdfUrl(company) {
  * Process all PDF URLs with direct extraction
  */
 export async function processAllPdfUrls(companies) {
-  console.log(`Starting direct extraction for ${companies.length} PDF URLs`);
+  console.log(`Starting direct extraction for ${companies.length} URLs (PDFs and websites)`);
   
   // Extract data with concurrency control
   const results = await concurrentMap(
     companies, 
-    extractDataFromPdfUrl,
+    extractDataFromUrl,
     config.maxConcurrentExtractions // Use limited concurrency for API calls
   );
   
@@ -329,7 +468,11 @@ export async function processAllPdfUrls(companies) {
   const failed = results.filter(r => r.status === 'extraction_failed').length;
   const skipped = results.filter(r => r.status === 'extraction_skipped' || r.status === 'skipped').length;
   
-  console.log(`Direct extraction summary: ${succeeded} succeeded, ${failed} failed, ${skipped} skipped`);
+  // Additional detailed summary by type
+  const pdfExtracted = results.filter(r => r.sourceType === 'pdf' && r.status === 'extraction_complete').length;
+  const websiteExtracted = results.filter(r => r.sourceType === 'website' && r.status === 'extraction_complete').length;
+  
+  console.log(`Direct extraction summary: ${succeeded} succeeded (${pdfExtracted} PDFs, ${websiteExtracted} websites), ${failed} failed, ${skipped} skipped`);
   
   return results;
 }

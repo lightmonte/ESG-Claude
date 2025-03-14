@@ -8,37 +8,62 @@ import { getCriterionDescription } from '../lib/data/criteria-descriptions.js';
 
 /**
  * Create a user prompt for ESG extraction
- * @param {string} pdfUrl - URL of the PDF to analyze
+ * @param {string} documentUrl - URL of the document (PDF or website) to analyze
  * @param {Array} relevantCriteria - Array of relevant criteria for the industry
  * @param {Object} options - Additional options
  * @returns {string} - User prompt
  */
-export function createUserPrompt(pdfUrl, relevantCriteria, options = {}) {
+export function createUserPrompt(documentUrl, relevantCriteria, options = {}) {
   const { 
     includeCriteriaDescriptions = true,
     maxActions = 5,
-    isBatch = false
+    isBatch = false,
+    contentType = 'pdf',  // 'pdf' or 'website'
+    websiteContent = null // For website content extraction
   } = options;
   
-  // Format criteria list for the prompt
+  // Format criteria list for the prompt with descriptions and keywords
   const criteriaList = formatCriteriaList(relevantCriteria, includeCriteriaDescriptions);
   
-  // Create the criteria structure for the JSON example
+  // Create the criteria structure for the JSON
   const criteriaStructure = createCriteriaStructure(relevantCriteria, maxActions);
   
-  return `Extract ESG information from the sustainability report at URL: ${pdfUrl}
+  // Different intro based on content type
+  let promptIntro;
+  if (contentType === 'pdf') {
+    promptIntro = `Extract ESG information from the sustainability report at URL: ${documentUrl}`;
+  } else {
+    promptIntro = `Extract ESG information from the website at URL: ${documentUrl}
+
+The website content has been extracted and is provided below:`;
+    
+    // If we have website content, append it to the prompt
+    if (websiteContent) {
+      promptIntro += `\n\n${websiteContent}`;
+    }
+  }
+  
+  return `${promptIntro}
 
 Extract information for EXACTLY the following ${relevantCriteria.length} ESG criteria (no more, no less):
 ${criteriaList}
 
-Also extract the following basic information:
-- Company name
-- Report year/period 
-- Report title
+Your goal is to extract the following information:
+01. Company name, report year/period, and title
+02. Overall sustainability abstract (max 500 characters)
+03. Three highlights:
+   - Highest entrepreneurial courage (max 400 characters)
+   - Most important internal sustainability action (max 400 characters)
+   - Most important customer sustainability solution (max 400 characters)
+04. Actions and solutions for each criterion
+05. Carbon footprint data (scope 1, 2, 3 and totals) for available years
+06. Climate standards compliance (ISO 14001, EMAS, ISO 50001, CDP, SBTi)
+07. Other important sustainability initiatives
+08. Any sustainability-related controversies and company responses
 
-For each criterion above, extract:
--Maximum ${maxActions} concrete actions/solutions the company is taking, including any supporting numbers 
--For each action/solution, identify relevant direct text excerpts from the document that support it
+For each criterion, extract:
+- Maximum ${maxActions} concrete actions/solutions the company is taking, including any supporting numbers
+- For each action/solution, identify relevant direct text excerpts from the document that support it
  
 Format your response as a JSON object with this structure:
 {
@@ -47,25 +72,54 @@ Format your response as a JSON object with this structure:
     "reportYear": "Year",
     "reportTitle": "Title"
   },
-${criteriaStructure}
+  "abstract": "Summary of business and sustainability strategy",
+  "highlights": {
+    "courage": "Most courageous initiative",
+    "action": "Most important internal action",
+    "solution": "Most important customer solution"
+  },
+${criteriaStructure},
+  "carbonFootprint": {
+    "scope1": "x.xxx t CO2e (year)",
+    "scope2": "x.xxx t CO2e (year)",
+    "scope3": "x.xxx t CO2e (year)",
+    "total": "x.xxx t CO2e (year)"
+  },
+  "climateStandards": {
+    "iso14001": "Yes/No",
+    "iso50001": "Yes/No",
+    "emas": "Yes/No",
+    "cdp": "Yes/No",
+    "sbti": "Yes/No"
+  },
+  "otherInitiatives": "Other important sustainability initiatives (max 1000 chars)",
+  "controversies": "Any controversies and responses (max 1000 chars)"
 }
 
 FORMATTING REQUIREMENTS (CRITICAL):
 1. Include EXACTLY the ${relevantCriteria.length} criteria listed above with their exact IDs as shown - do not add or remove any criteria
 2. Include a MAXIMUM of ${maxActions} actions/solutions per criterion (less if fewer are mentioned in the document). These should be the TOP actions of the company in this criterion.
 3. Keep each action under 150 characters
-4. Rank actions by importance
-5. For the "extracts" field, include direct quotes from the document that supports the actions
+4. Format each action/solution as a bullet point starting with "#"
+5. Rank actions by importance (customer solutions first, then internal actions)
+6. For the "extracts" field, include direct quotes from the document that supports the actions
 
 CONTENT REQUIREMENTS:
 1. YOUR RESPONSE MUST INCLUDE ALL ${relevantCriteria.length} CRITERIA LISTED ABOVE WITH THEIR EXACT IDs, even if there's limited or no information for some criteria
 2. For criteria with no information, include an action with "# No specific actions found for [CRITERION NAME]" and note "No relevant information found in the report for [CRITERION NAME]" in extracts
 3. Include ONLY information explicitly stated in the document
-4. Generate the results in the PDF's original language (German or English) - don't translate.
-5. List actions/solutions by importance (customer solutions first, then internal actions)
-6. Use original wording from the report where possible
-7. For carbon emissions, use #.### t CO2e format (calculate if needed)
-8. When a data point does not exist in the report, say "Not stated" in the extracts field
+4. Generate the results in the document's original language (German or English) - don't translate
+5. Use original wording from the document where possible
+6. For carbon emissions, use x.xxx t CO2e format (calculate if needed)
+7. When a data point does not exist in the document, say "Not stated" in the extracts field
+
+FINAL VERIFICATION:
+Before submitting, verify that:
+1. You've included only information explicitly stated in the document
+2. All actions/solutions are formatted correctly with "#" and under 150 characters
+3. You've addressed all ${relevantCriteria.length} required criteria
+4. Your output is valid, parseable JSON
+5. You've preserved the original language of the document
 
 Your response MUST be valid JSON that can be parsed with JSON.parse().`;
 }
@@ -78,17 +132,16 @@ Your response MUST be valid JSON that can be parsed with JSON.parse().`;
  */
 function formatCriteriaList(criteria, includeDescriptions = false) {
   return criteria.map(criterion => {
+    const description = getCriterionDescription(criterion.id);
     let item = `- ${criterion.id}: ${criterion.name_en}`;
     
-    if (includeDescriptions) {
-      const description = getCriterionDescription(criterion.id);
-      if (description) {
-        item += `\n  Description: ${description.description}`;
-      }
+    if (includeDescriptions && description) {
+      item += `\n  Description: ${description.description}`;
+      item += `\n  Typical keywords: ${description.keywords.join(', ')}`;
     }
     
     return item;
-  }).join('\n');
+  }).join('\n\n');
 }
 
 /**

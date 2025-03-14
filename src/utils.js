@@ -4,6 +4,45 @@
  * Utility functions used across the application
  */
 
+/**
+ * Checks if a URL is a valid PDF URL
+ * @param {string} url - URL to check
+ * @returns {boolean} - Whether the URL appears to be a valid PDF
+ */
+export function validatePdfUrl(url) {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+
+  // Remove query parameters for the check
+  const baseUrl = url.split('?')[0];
+  
+  // Check if the URL ends with .pdf
+  if (baseUrl.toLowerCase().endsWith('.pdf')) {
+    return true;
+  }
+  
+  // Check if the URL contains PDF indicators
+  const pdfIndicators = [
+    '/pdf/', 
+    '/document/pdf/', 
+    '/content/pdf/',
+    '/download/pdf/',
+    'pdf=',
+    'type=pdf',
+    'format=pdf',
+    'application/pdf'
+  ];
+  
+  for (const indicator of pdfIndicators) {
+    if (url.toLowerCase().includes(indicator)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 import fs from 'fs/promises';
 import path from 'path';
 import config from './config.js';
@@ -125,5 +164,46 @@ export function extractFilename(urlOrPath) {
   } catch (e) {
     // Not a URL, treat as path
     return path.basename(urlOrPath);
+  }
+}
+
+/**
+ * Checks if a URL is a valid website URL (not a PDF)
+ * @param {string} url - URL to check
+ * @returns {boolean} - Whether the URL appears to be a valid website
+ */
+export function validateWebsiteUrl(url) {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+  
+  try {
+    // Check if it's a valid URL
+    new URL(url);
+    
+    // If it's a PDF URL, it's not a website URL
+    if (validatePdfUrl(url)) {
+      return false;
+    }
+    
+    // Check for common web protocols
+    return url.startsWith('http://') || url.startsWith('https://');
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Determines the type of a URL (pdf, website, unknown)
+ * @param {string} url - URL to check
+ * @returns {string} - Type of URL: 'pdf', 'website', or 'unknown'
+ */
+export function determineUrlType(url) {
+  if (validatePdfUrl(url)) {
+    return 'pdf';
+  } else if (validateWebsiteUrl(url)) {
+    return 'website';
+  } else {
+    return 'unknown';
   }
 }

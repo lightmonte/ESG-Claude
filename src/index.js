@@ -47,7 +47,7 @@ async function loadCompanyUrls(csvPath) {
       const companyId = record.company_id || record.companyId || normalizeCompanyId(name);
       
       // Check for shouldUpdate flag - convert to proper boolean
-      let shouldUpdate = true; // Default to true
+      let shouldUpdate = false; // Default to false unless explicitly set to true
       if (record.shouldUpdate !== undefined) {
         if (typeof record.shouldUpdate === 'boolean') {
           shouldUpdate = record.shouldUpdate;

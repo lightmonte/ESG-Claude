@@ -219,27 +219,17 @@ export async function filterCompaniesToProcess(companies, stage) {
     const companyId = company.companyId || company.company_id;
     
     // Check shouldUpdate flag - this takes precedence over database status
-    if (company.shouldUpdate === false) {
-      console.log(`Skipping ${companyId} based on shouldUpdate flag`);
+    // Only process if shouldUpdate is EXPLICITLY true
+    if (company.shouldUpdate !== true) {
+      console.log(`Skipping ${companyId} based on shouldUpdate flag not being explicitly true`);
       continue;
     }
 
     // Log the status of shouldUpdate for debugging
-    console.log(`Checking company ${companyId}, shouldUpdate=${company.shouldUpdate} (type: ${typeof company.shouldUpdate})`);
+    console.log(`Processing company ${companyId}, shouldUpdate=${company.shouldUpdate} (type: ${typeof company.shouldUpdate})`);
     
-    // Check the database status - only relevant if shouldUpdate is not explicitly true
-    if (company.shouldUpdate !== true) {
-      const shouldProcess = await shouldProcessCompany(companyId, stage);
-      if (!shouldProcess) {
-        console.log(`${companyId}: Current status is '${await getExtractionStatus(companyId)}', should skip`);
-        console.log(`Should process ${companyId}? ${shouldProcess}`);
-        console.log(`Skipping ${companyId} based on existing processing status`);
-        continue;
-      }
-    } else {
-      // Debug log for explicitly true shouldUpdate
-      console.log(`${companyId}: Processing because shouldUpdate is explicitly true`);
-    }
+    // At this point, shouldUpdate is explicitly true, so we process the company
+    console.log(`${companyId}: Processing because shouldUpdate is explicitly true`);
     
     // If we get here, either shouldUpdate is true or there's no previous successful processing
     filteredCompanies.push(company);

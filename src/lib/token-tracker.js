@@ -25,8 +25,34 @@ const usageData = {
  * @param {object} apiResponse - Response from Claude API containing usage info
  */
 function recordClaudeExtractionUsage(companyId, apiResponse) {
+  if (!companyId) {
+    console.warn('Missing companyId while attempting to record token usage');
+    return;
+  }
+
+  // Handle missing or invalid API response
   if (!apiResponse || !apiResponse.usage) {
-    console.warn(`No usage data available for ${companyId}`);
+    console.warn(`No usage data available for ${companyId}, using estimates instead`);
+    
+    // Estimate some reasonable numbers to at least have some tracking
+    const estimatedInputTokens = 3000;  // Reasonable estimate for request size
+    const estimatedOutputTokens = 2000; // Reasonable estimate for response size
+    
+    // Record estimated usage
+    usageData.extraction[companyId] = {
+      inputTokens: estimatedInputTokens,
+      outputTokens: estimatedOutputTokens,
+      totalTokens: estimatedInputTokens + estimatedOutputTokens,
+      timestamp: new Date().toISOString(),
+      isEstimated: true
+    };
+    
+    // Update global totals with estimates
+    usageData.totalInputTokens += estimatedInputTokens;
+    usageData.totalOutputTokens += estimatedOutputTokens;
+    usageData.calls += 1;
+    
+    console.log(`Recorded estimated token usage for ${companyId}: ~${estimatedInputTokens} input + ~${estimatedOutputTokens} output tokens`);
     return;
   }
   
@@ -55,14 +81,32 @@ function recordClaudeExtractionUsage(companyId, apiResponse) {
  * @param {number} outputTokens - Number of output tokens used
  */
 function recordClaudeBatchExtractionUsage(companyId, inputTokens, outputTokens) {
-  console.log(`Recording batch token usage: ${companyId} with ${inputTokens} input, ${outputTokens} output tokens`);
+  if (!companyId) {
+    console.warn('Missing companyId while attempting to record batch token usage');
+    return;
+  }
+
+  // Handle missing token counts
+  if (inputTokens === undefined || outputTokens === undefined) {
+    console.warn(`Missing token counts for ${companyId}, using estimates instead`);
+    
+    // Estimate some reasonable numbers to at least have some tracking
+    inputTokens = 3000;  // Reasonable estimate for batch request size
+    outputTokens = 2000; // Reasonable estimate for batch response size
+    
+    console.log(`Using estimated batch token usage for ${companyId}: ~${inputTokens} input, ~${outputTokens} output tokens`);
+  } else {
+    console.log(`Recording batch token usage: ${companyId} with ${inputTokens} input, ${outputTokens} output tokens`);
+  }
+  
   // Record company-specific usage
   usageData.batchExtraction[companyId] = {
     inputTokens,
     outputTokens,
     totalTokens: inputTokens + outputTokens,
     timestamp: new Date().toISOString(),
-    isBatch: true
+    isBatch: true,
+    isEstimated: inputTokens === 3000 && outputTokens === 2000 // Flag if we used estimates
   };
   
   // Update global totals
@@ -79,12 +123,12 @@ function recordClaudeBatchExtractionUsage(companyId, inputTokens, outputTokens) 
  */
 function generateUsageReport() {
   // Calculate cost estimates based on current Claude pricing
-  // Regular API pricing
-  const regularInputCostPer1K = 3.00 / 1000000;  // $3 per 1M input tokens
+  // Regular API pricing - Claude 3.7 Sonnet pricing as of March 2025
+  const regularInputCostPer1K = 5.00 / 1000000;  // $5 per 1M input tokens
   const regularOutputCostPer1K = 15.00 / 1000000; // $15 per 1M output tokens
   
-  // Batch API pricing (50% of regular)
-  const batchInputCostPer1K = 1.50 / 1000000;  // $1.50 per 1M input tokens
+  // Batch API pricing (typically around 50% of regular for high volume)
+  const batchInputCostPer1K = 2.50 / 1000000;  // $2.50 per 1M input tokens 
   const batchOutputCostPer1K = 7.50 / 1000000; // $7.50 per 1M output tokens
   
   // Count tokens by type
@@ -92,17 +136,21 @@ function generateUsageReport() {
   let regularOutputTokens = 0;
   let batchInputTokens = 0;
   let batchOutputTokens = 0;
+  let estimatedRegularCount = 0;
+  let estimatedBatchCount = 0;
   
   // Count regular extraction tokens
   Object.values(usageData.extraction).forEach(usage => {
     regularInputTokens += usage.inputTokens;
     regularOutputTokens += usage.outputTokens;
+    if (usage.isEstimated) estimatedRegularCount++;
   });
   
   // Count batch extraction tokens
   Object.values(usageData.batchExtraction).forEach(usage => {
     batchInputTokens += usage.inputTokens;
     batchOutputTokens += usage.outputTokens;
+    if (usage.isEstimated) estimatedBatchCount++;
   });
   
   // Calculate costs
@@ -115,14 +163,24 @@ function generateUsageReport() {
   const batchTotalCost = (parseFloat(batchInputCost) + parseFloat(batchOutputCost)).toFixed(4);
   
   const totalCost = (parseFloat(regularTotalCost) + parseFloat(batchTotalCost)).toFixed(4);
+  const estimationDisclaimer = (estimatedRegularCount > 0 || estimatedBatchCount > 0) ? 
+    `⚠️ Note: ${estimatedRegularCount + estimatedBatchCount} calls used estimated token counts due to missing data.\n` : '';
   
   // Build the report
   let report = '\n=== Claude API Token Usage Report ===\n\n';
   
+  // Add model and date information
+  report += `Model: ${config.claudeModel}\n`;
+  report += `Date: ${new Date().toISOString()}\n\n`;
+  
+  if (estimationDisclaimer) {
+    report += estimationDisclaimer + '\n';
+  }
+  
   // Regular API usage
   report += 'Regular API Usage:\n';
   report += '-----------------\n';
-  report += `Regular API Calls: ${usageData.calls}\n`;
+  report += `Regular API Calls: ${usageData.calls}${estimatedRegularCount > 0 ? ` (${estimatedRegularCount} estimated)` : ''}\n`;
   report += `Regular Input Tokens: ${regularInputTokens.toLocaleString()}\n`;
   report += `Regular Output Tokens: ${regularOutputTokens.toLocaleString()}\n`;
   report += `Regular Total Tokens: ${(regularInputTokens + regularOutputTokens).toLocaleString()}\n`;
@@ -131,7 +189,7 @@ function generateUsageReport() {
   // Batch API usage
   report += 'Batch API Usage:\n';
   report += '----------------\n';
-  report += `Batch API Calls: ${usageData.batchCalls}\n`;
+  report += `Batch API Calls: ${usageData.batchCalls}${estimatedBatchCount > 0 ? ` (${estimatedBatchCount} estimated)` : ''}\n`;
   report += `Batch Input Tokens: ${batchInputTokens.toLocaleString()}\n`;
   report += `Batch Output Tokens: ${batchOutputTokens.toLocaleString()}\n`;
   report += `Batch Total Tokens: ${(batchInputTokens + batchOutputTokens).toLocaleString()}\n`;
@@ -145,6 +203,12 @@ function generateUsageReport() {
   report += `Total Output Tokens: ${usageData.totalOutputTokens.toLocaleString()}\n`;
   report += `Total Tokens: ${(usageData.totalInputTokens + usageData.totalOutputTokens).toLocaleString()}\n`;
   report += `Total API Cost: ${totalCost}\n\n`;
+  
+  // Pricing assumptions
+  report += 'Pricing Assumptions:\n';
+  report += '-------------------\n';
+  report += `Regular API: ${regularInputCostPer1K * 1000000}/1M input tokens, ${regularOutputCostPer1K * 1000000}/1M output tokens\n`;
+  report += `Batch API: ${batchInputCostPer1K * 1000000}/1M input tokens, ${batchOutputCostPer1K * 1000000}/1M output tokens\n\n`;
   
   // Company breakdown
   report += 'Company Breakdown:\n';
@@ -160,13 +224,15 @@ function generateUsageReport() {
       // Regular extraction usage
       const regularUsage = usageData.extraction[companyId];
       if (regularUsage) {
-        report += `${companyId} (Regular): ${regularUsage.inputTokens} input + ${regularUsage.outputTokens} output = ${regularUsage.totalTokens} total tokens\n`;
+        const estimatedFlag = regularUsage.isEstimated ? ' (estimated)' : '';
+        report += `${companyId} (Regular)${estimatedFlag}: ${regularUsage.inputTokens} input + ${regularUsage.outputTokens} output = ${regularUsage.totalTokens} total tokens\n`;
       }
       
       // Batch extraction usage
       const batchUsage = usageData.batchExtraction[companyId];
       if (batchUsage) {
-        report += `${companyId} (Batch): ${batchUsage.inputTokens} input + ${batchUsage.outputTokens} output = ${batchUsage.totalTokens} total tokens\n`;
+        const estimatedFlag = batchUsage.isEstimated ? ' (estimated)' : '';
+        report += `${companyId} (Batch)${estimatedFlag}: ${batchUsage.inputTokens} input + ${batchUsage.outputTokens} output = ${batchUsage.totalTokens} total tokens\n`;
       }
     }
   }

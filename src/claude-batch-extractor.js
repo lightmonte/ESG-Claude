@@ -8,7 +8,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import config from './config.js';
-import { logToFile, sleep, ensureDirectoryExists } from './utils.js';
+import { logToFile, sleep, ensureDirectoryExists, validatePdfUrl, validateWebsiteUrl, determineUrlType } from './utils.js';
 import Anthropic from '@anthropic-ai/sdk';
 import tokenTracker from './lib/token-tracker.js';
 import * as persistence from './lib/persistence.js';
@@ -23,11 +23,17 @@ const anthropic = new Anthropic({
 });
 
 // Check if batch API is available
-const isBatchAPIAvailable = !!(anthropic && anthropic.messages && anthropic.messages.batches);
-console.log(`Batch API availability check: ${isBatchAPIAvailable ? 'Available' : 'Not available in current SDK version'}`);
-if (!isBatchAPIAvailable) {
-  console.warn('WARNING: Batch API not available in the current Anthropic SDK version.');
-  console.warn('Please update @anthropic-ai/sdk to version 0.19.0 or later, or disable batch processing.');
+let isBatchAPIAvailable = false;
+try {
+  isBatchAPIAvailable = !!(anthropic && anthropic.messages && anthropic.messages.batches);
+  console.log(`Batch API availability check: ${isBatchAPIAvailable ? 'Available' : 'Not available in current SDK version'}`);
+  if (!isBatchAPIAvailable) {
+    console.warn('WARNING: Batch API not available in the current Anthropic SDK version.');
+    console.warn('Please update @anthropic-ai/sdk to version 0.19.0 or later, or disable batch processing.');
+  }
+} catch (error) {
+  console.error(`Error checking batch API availability: ${error.message}`);
+  console.warn('Setting batch API availability to false due to error.');
 }
 
 /**
@@ -43,8 +49,65 @@ export async function createBatchExtractionRequest(companies) {
     throw new Error('Batch API is not available in the current Anthropic SDK version. Please update @anthropic-ai/sdk or disable batch processing by setting USE_BATCH_PROCESSING=false in .env');
   }
   
-  // Prepare batch requests
-  const batchRequests = await Promise.all(companies.map(async company => {
+  // Prepare batch requests for valid PDF URLs
+  const validCompanies = [];
+  const invalidCompanies = [];
+  
+  // First validate all URLs
+  for (const company of companies) {
+    const { companyId, name, url } = company;
+    
+    // Determine URL type
+    const urlType = determineUrlType(url);
+    
+    // Skip if URL is invalid
+    if (urlType === 'unknown') {
+      console.warn(`Skipping ${companyId} - URL does not appear to be a valid PDF or website: ${url}`);
+      await persistence.updateCompany(companyId, name, url);
+      await persistence.updateProcessingStatus(
+        companyId, 
+        'extraction', 
+        'extraction_skipped', 
+        'URL does not appear to be a valid PDF or website'
+      );
+      
+      invalidCompanies.push({
+        ...company,
+        status: 'extraction_skipped',
+        message: 'URL does not appear to be a valid PDF or website'
+      });
+    } else {
+      // Currently, batch processing only supports PDFs
+      if (urlType === 'pdf') {
+        validCompanies.push(company);
+      } else {
+        console.warn(`Skipping ${companyId} for batch processing - Websites not supported in batch mode: ${url}`);
+        console.log(`The website will be processed in direct extraction mode.`);
+        await persistence.updateCompany(companyId, name, url);
+        await persistence.updateProcessingStatus(
+          companyId, 
+          'extraction', 
+          'extraction_skipped', 
+          'Websites not supported in batch mode'
+        );
+        
+        invalidCompanies.push({
+          ...company,
+          status: 'extraction_skipped',
+          message: 'Websites not supported in batch mode'
+        });
+      }
+    }
+  }
+  
+  // Log the results of the validation
+  if (invalidCompanies.length > 0) {
+    console.log(`Skipped ${invalidCompanies.length} companies with invalid PDF URLs`);
+  }
+  console.log(`Processing ${validCompanies.length} companies with valid PDF URLs`);
+  
+  // Prepare batch requests only for valid URLs
+  const batchRequests = await Promise.all(validCompanies.map(async company => {
     const { companyId, name, url, industry } = company;
     
     // Use the industry as-is from hardcoded data
