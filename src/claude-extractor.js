@@ -364,9 +364,11 @@ export async function extractDataFromUrl(company) {
           employeeRange: "",
           revenueRange: ""
         };
-      } else if (extractedData.companyDetails && !extractedData.companyDetails.contactInfo.website) {
+      } else {
+        // Ensure contactInfo exists
+        extractedData.companyDetails.contactInfo = extractedData.companyDetails.contactInfo || {};
         // Ensure website is set if available
-        extractedData.companyDetails.contactInfo.website = url || "";
+        extractedData.companyDetails.contactInfo.website = extractedData.companyDetails.contactInfo.website || url || "";
       }
       
       // If there are any missing criteria, add empty placeholders
@@ -393,7 +395,7 @@ export async function extractDataFromUrl(company) {
       // Update processing status
       await persistence.updateCompany(companyId, name, url);
       await persistence.updateProcessingStatus(companyId, 'extraction', 'extraction_complete');
-  console.log(`✓ Successfully extracted data for ${companyId} with ${Object.keys(extractedData).length} fields including ${relevantCriteria.length} criteria`);
+      console.log(`✓ Successfully extracted data for ${companyId} with ${Object.keys(extractedData).length} fields including ${relevantCriteria.length} criteria`);
       
       return {
         companyId,

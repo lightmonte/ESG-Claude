@@ -64,8 +64,8 @@ Your goal is to extract the following information:
    - Highest entrepreneurial courage (max 400 characters)
    - Most important internal sustainability action (max 400 characters)
    - Most important customer sustainability solution (max 400 characters)
-05. Actions and solutions for each criterion
-06. Carbon footprint data (scope 1, 2, 3 and totals) for available years
+05. Actions and solutions for each criterion - both INTERNAL actions within the company and SOLUTIONS offered to customers
+06. Carbon footprint data (scope 1, 2, 3 and totals) 
 07. Climate standards compliance (ISO 14001, EMAS, ISO 50001, CDP, SBTi)
 08. Other important sustainability initiatives
 09. Any sustainability-related controversies and company responses
@@ -126,14 +126,6 @@ ${criteriaStructure},
 
 FORMATTING REQUIREMENTS (CRITICAL):
 1. Include EXACTLY the ${relevantCriteria.length} criteria listed above with their exact IDs as shown - do not add or remove any criteria
-2. Include a MAXIMUM of ${maxActions} actions/solutions per criterion (less if fewer are mentioned in the document). These should be the TOP actions of the company in this criterion.
-3. Keep each action under 150 characters
-4. Format each action/solution as a bullet point starting with "#"
-5. Rank actions by importance (customer solutions first, then internal actions)
-6. For the "extracts" field, include direct quotes from the document that supports the actions
-
-CONTENT REQUIREMENTS:
-1. YOUR RESPONSE MUST INCLUDE ALL ${relevantCriteria.length} CRITERIA LISTED ABOVE WITH THEIR EXACT IDs, even if there's limited or no information for some criteria
 2. For criteria with no information, include an action with "# No specific actions found for [CRITERION NAME]" and note "No relevant information found in the report for [CRITERION NAME]" in extracts
 3. Include ONLY information explicitly stated in the document
 4. Look carefully for company information such as legal entity name, business description, address, founding year, employee count, and revenue

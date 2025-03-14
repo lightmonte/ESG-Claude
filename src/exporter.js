@@ -765,29 +765,46 @@ export async function exportToExcel(results) {
       // Add carbon footprint data (indicator columns)
       rowData.push('Carbon Footprint'); // indicator_key
       
+      // Get carbon footprint data with backward compatibility
+      const carbonFootprint = data.carbonFootprint || {};
+      const scope1 = carbonFootprint.scope1 || '';
+      const scope2 = carbonFootprint.scope2 || '';
+      const scope3 = carbonFootprint.scope3 || '';
+      const prevYearScope1 = carbonFootprint.previousYearScope1 || '';
+      const prevYearScope2 = carbonFootprint.previousYearScope2 || '';
+      const prevYearScope3 = carbonFootprint.previousYearScope3 || '';
+      const reducTarget = carbonFootprint.reductionTargets || '';
+      
       // Scope 1
       rowData.push('Scope 1'); // indicator_sub_key_1
-      const scope1 = data.carbonFootprint?.scope1 || '';
       rowData.push(scope1); // indicator_sub_key_1_value_1
-      rowData.push(''); // indicator_sub_key_1_value_2
-      rowData.push(''); // indicator_sub_key_1_value_3
+      rowData.push(prevYearScope1); // indicator_sub_key_1_value_2
+      rowData.push(reducTarget); // indicator_sub_key_1_value_3
       
       // Scope 2
       rowData.push('Scope 2'); // indicator_sub_key_2
-      const scope2 = data.carbonFootprint?.scope2 || '';
       rowData.push(scope2); // indicator_sub_key_2_value_1
-      rowData.push(''); // indicator_sub_key_2_value_2
+      rowData.push(prevYearScope2); // indicator_sub_key_2_value_2
       rowData.push(''); // indicator_sub_key_2_value_3
       
       // Scope 3
       rowData.push('Scope 3'); // indicator_sub_key_3
-      const scope3 = data.carbonFootprint?.scope3 || '';
       rowData.push(scope3); // indicator_sub_key_3_value_1
-      rowData.push(''); // indicator_sub_key_3_value_2
-      rowData.push(''); // indicator_sub_key_3_value_3
+      rowData.push(prevYearScope3); // indicator_sub_key_3_value_2
+      rowData.push(carbonFootprint.trends || ''); // indicator_sub_key_3_value_3
       
-      // Other achievements and highlights
-      rowData.push(data.otherInitiatives || ''); // other_achievements
+      // Add controversies and other initiatives to the 'other_achievements' column
+      let otherText = data.otherInitiatives || '';
+      let controversiesText = data.controversies || '';
+      
+      // Create combined text for other achievements if both are present
+      if (otherText && controversiesText) {
+        rowData.push(`${otherText}\n\nControversies: ${controversiesText}`);
+      } else if (controversiesText) {
+        rowData.push(`Controversies: ${controversiesText}`);
+      } else {
+        rowData.push(otherText);
+      }
       
       // Highlights
       rowData.push(data.highlights?.courage || ''); // highlights_courage
@@ -797,14 +814,19 @@ export async function exportToExcel(results) {
       // Climate standards
       let climateStandards = '';
       if (data.climateStandards) {
-        // Convert climate standards object to string
-        const standards = [];
-        if (data.climateStandards.iso14001 === 'Yes') standards.push('ISO 14001');
-        if (data.climateStandards.iso50001 === 'Yes') standards.push('ISO 50001');
-        if (data.climateStandards.emas === 'Yes') standards.push('EMAS');
-        if (data.climateStandards.cdp === 'Yes') standards.push('CDP');
-        if (data.climateStandards.sbti === 'Yes') standards.push('SBTi');
-        climateStandards = standards.join(', ');
+        // Simple approach - just use the certificationYears field if available
+        if (data.climateStandards.certificationYears && data.climateStandards.certificationYears.trim()) {
+          climateStandards = data.climateStandards.certificationYears;
+        } else {
+          // Fall back to just listing the standards that are certified
+          const standards = [];
+          if (data.climateStandards.iso14001 === 'Yes') standards.push('ISO 14001');
+          if (data.climateStandards.iso50001 === 'Yes') standards.push('ISO 50001');
+          if (data.climateStandards.emas === 'Yes') standards.push('EMAS');
+          if (data.climateStandards.cdp === 'Yes') standards.push('CDP');
+          if (data.climateStandards.sbti === 'Yes') standards.push('SBTi');
+          climateStandards = standards.join(', ');
+        }
       }
       rowData.push(climateStandards); // climate_standards
       
