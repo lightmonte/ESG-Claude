@@ -135,8 +135,8 @@ export async function extractDataFromUrl(company) {
     if (urlType === 'pdf') {
       // For PDFs, create the user prompt with the PDF URL
       usrPrompt = userPrompt.createUserPrompt(url, relevantCriteria, {
-        includeCriteriaDescriptions: false,
-        maxActions: 5,
+        includeCriteriaDescriptions: true,
+        maxActions: process.env.MAX_ACTIONS_PER_CRITERION || 8,
         isBatch: false,
         contentType: 'pdf'
       });
@@ -152,8 +152,8 @@ export async function extractDataFromUrl(company) {
         
         // Create the user prompt with the website content
         usrPrompt = userPrompt.createUserPrompt(url, relevantCriteria, {
-          includeCriteriaDescriptions: false,
-          maxActions: 5,
+          includeCriteriaDescriptions: true,
+          maxActions: process.env.MAX_ACTIONS_PER_CRITERION || 8,
           isBatch: false,
           contentType: 'website',
           websiteContent: formattedContent
@@ -181,7 +181,7 @@ export async function extractDataFromUrl(company) {
     const response = await retryWithBackoff(async () => {
       return await anthropic.messages.create({
         model: config.claudeModel,
-        max_tokens: 4000,
+        max_tokens: 8000,
         system: sysPrompt,
         messages: [
           {
@@ -371,12 +371,63 @@ export async function extractDataFromUrl(company) {
         extractedData.companyDetails.contactInfo.website = extractedData.companyDetails.contactInfo.website || url || "";
       }
       
+      // Ensure carbonFootprint has the expected structure with years
+      if (!extractedData.carbonFootprint) {
+        extractedData.carbonFootprint = {
+          scope1_2022: "",
+          scope2_2022: "",
+          scope3_2022: "",
+          total_2022: "",
+          scope1_2023: "",
+          scope2_2023: "",
+          scope3_2023: "",
+          total_2023: "",
+          scope1_2024: "",
+          scope2_2024: "",
+          scope3_2024: "",
+          total_2024: ""
+        };
+      } else {
+        // Handle backward compatibility with older format
+        if (extractedData.carbonFootprint.scope1 && !extractedData.carbonFootprint.scope1_2023) {
+          // Try to extract year from the format "x.xxx t CO2e (year)"
+          const extractYear = (value) => {
+            if (!value) return null;
+            const match = value.match(/\((\d{4})\)/);
+            return match ? match[1] : null;
+          };
+          
+          const year = extractYear(extractedData.carbonFootprint.scope1) || '2023';
+          
+          // Move data to the appropriate year fields
+          extractedData.carbonFootprint[`scope1_${year}`] = extractedData.carbonFootprint.scope1?.replace(/\s*\(\d{4}\)/, '') || '';
+          extractedData.carbonFootprint[`scope2_${year}`] = extractedData.carbonFootprint.scope2?.replace(/\s*\(\d{4}\)/, '') || '';
+          extractedData.carbonFootprint[`scope3_${year}`] = extractedData.carbonFootprint.scope3?.replace(/\s*\(\d{4}\)/, '') || '';
+          extractedData.carbonFootprint[`total_${year}`] = extractedData.carbonFootprint.total?.replace(/\s*\(\d{4}\)/, '') || '';
+          
+          // Clean up old fields
+          delete extractedData.carbonFootprint.scope1;
+          delete extractedData.carbonFootprint.scope2;
+          delete extractedData.carbonFootprint.scope3;
+          delete extractedData.carbonFootprint.total;
+        }
+        
+        // Ensure all year fields exist
+        ['2022', '2023', '2024'].forEach(year => {
+          ['scope1', 'scope2', 'scope3', 'total'].forEach(scope => {
+            const key = `${scope}_${year}`;
+            if (!extractedData.carbonFootprint[key]) {
+              extractedData.carbonFootprint[key] = '';
+            }
+          });
+        });
+      }
+      
       // If there are any missing criteria, add empty placeholders
       relevantCriteria.forEach(criterion => {
         if (!extractedData[criterion.id]) {
           extractedData[criterion.id] = {
-            actions: ["# No specific actions found for " + criterion.name_en],
-            extracts: "No relevant information found in the report for " + criterion.name_en
+            actions: ["# No specific actions found for " + criterion.name_en]
           };
         }
       });

@@ -87,6 +87,7 @@ esg-Claude/
    CLAUDE_API_KEY=your_api_key_here
    CLAUDE_MODEL=claude-3-7-sonnet-20250219
    MAX_CONCURRENT_EXTRACTIONS=3
+   MAX_ACTIONS_PER_CRITERION=8
    USE_BATCH_PROCESSING=false
    ```
 4. Prepare your `company_urls.csv` file with the following columns:
@@ -223,27 +224,33 @@ To add new criteria:
 
 ## Recent Improvements (March 2025)
 
-1. **Enhanced Error Handling**:
+1. **Enhanced Extraction Detail**:
+   - Improved extraction of detailed actions with specific numbers and technical information
+   - Added industry-specific criteria descriptions and keywords to prompts
+   - Increased maximum actions per criterion from 5 to 8 for more comprehensive coverage
+   - Better formatting of actions to include specific details, percentages, and measurements
+
+2. **Enhanced Error Handling**:
    - Added comprehensive JSON repair capabilities
    - Improved error logging and retry logic
    - Added URL validation before processing
 
-2. **Website Content Extraction**:
+3. **Website Content Extraction**:
    - Added support for extracting ESG data from websites
    - Intelligent content extraction using readability algorithms
    - Support for both PDF and website sources in a single workflow
 
-2. **Token Usage Tracking**:
+4. **Token Usage Tracking**:
    - Updated pricing to reflect Claude 3.7 Sonnet rates
    - Added estimated token counting when direct data is unavailable
    - Enhanced usage reporting with cost breakdowns
 
-3. **Batch Processing**:
+5. **Batch Processing**:
    - Added validation of PDF URLs before batch submission
    - Improved batch status tracking and monitoring
    - More robust error handling for batch operations
 
-4. **Stability Improvements**:
+6. **Stability Improvements**:
    - Better handling of malformed responses
    - Fallback mechanisms for failed extractions
    - More comprehensive logging throughout

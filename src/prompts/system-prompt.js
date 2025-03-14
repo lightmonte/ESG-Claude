@@ -31,15 +31,17 @@ EXTRACTION METHODOLOGY:
    - Contact information sections
    - Headers, footers, and title pages
    - Look specifically for legal entity name, business description, sector, address details, contact information, founding year, employee count, and revenue figures
-4. For each ESG criterion, first locate relevant sections, then identify specific actions and solutions
+4. For each ESG criterion, extract DETAILED actions with SPECIFIC information:
+   - Format actions EXACTLY like this: "# Reduction of energy consumption by 25% through LED installation in all facilities completed in 2023"
+   - Include precise numbers, percentages, and measurements (e.g., kWh saved, tons of CO2 reduced)
+   - Specify exact technical details (e.g., types of materials, equipment specifications)
+   - Note implementation timeframes and completion dates
+   - Include names of partners, certifications, and standards
+   - Extract 8-10 detailed actions per criterion when available
 5. Clearly distinguish between:
    - ACTIONS: Internal measures implemented by the company within its own operations or supply chain
    - SOLUTIONS: Products/services offered to customers that enable sustainability improvements
-6. Focus on CONCRETE actions with SPECIFIC details:
-   - Extract precise numbers, percentages, and metrics when available 
-   - Include timeframes and dates for initiatives when mentioned
-   - Look for measurable outcomes and results of sustainability programs
-   - Prioritize actions with quantifiable impact over general statements
+6. List SOLUTIONS first followed by ACTIONS for each criterion
 7. For carbon footprint data:
    - Extract emissions for all years mentioned in the report (current and historical)
    - Pay special attention to scope 1, 2, and 3 emissions and their breakdowns

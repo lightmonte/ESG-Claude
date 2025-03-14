@@ -159,6 +159,11 @@ async function main() {
     );
     
     console.log(`Processing ${filteredCompanies.length} out of ${uniqueCompanyUrls.length} companies for direct extraction`);
+    await logToFile(`Processing ${filteredCompanies.length} out of ${uniqueCompanyUrls.length} companies for direct extraction`, logfile);
+    
+    // Set the maximum number of actions to extract for each criterion
+    const maxActionsPerCriterion = parseInt(process.env.MAX_ACTIONS_PER_CRITERION || '8');
+    console.log(`Extracting up to ${maxActionsPerCriterion} actions/solutions per criterion`);
     
     // Step 3: Extract data from PDF URLs
     let extractionResults = [];

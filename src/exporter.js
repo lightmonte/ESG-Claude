@@ -173,8 +173,7 @@ export async function exportToCsv(results) {
       { id: 'companyName', title: 'Company Name' },
       { id: 'criteriaId', title: 'Criteria ID' },
       { id: 'criteriaName', title: 'Criteria Name' },
-      { id: 'criteriaContent', title: 'Criteria Content' },
-      { id: 'excerpt', title: 'Excerpt' }
+      { id: 'criteriaContent', title: 'Criteria Content' }
     ];
     
     const csvWriter = createObjectCsvWriter({
@@ -204,16 +203,13 @@ export async function exportToCsv(results) {
         Object.entries(data.esgCriteria).forEach(([criteriaId, criteriaData]) => {
           const criteriaName = getCriteriaName(criteriaId);
           const actions = criteriaData.actions || [];
-          // The description field becomes the excerpt
-          const excerpt = criteriaData.description || '';
           
           csvRows.push({
             companyId,
             companyName,
             criteriaId,
             criteriaName,
-            criteriaContent: formatLines(actions),
-            excerpt
+            criteriaContent: formatLines(actions)
           });
         });
       }
@@ -230,8 +226,7 @@ export async function exportToCsv(results) {
             criteriaName: 'CO2 Footprint',
             criteriaContent: Object.entries(footprint)
               .map(([key, value]) => `# ${key}: ${value}`)
-              .join('\n'),
-            excerpt: ''
+              .join('\n')
           });
         }
         
@@ -244,8 +239,7 @@ export async function exportToCsv(results) {
             criteriaName: 'Climate Standards',
             criteriaContent: data.climateData.climateStandards
               .map(standard => `# ${standard}`)
-              .join('\n'),
-            excerpt: ''
+              .join('\n')
           });
         }
         
@@ -258,8 +252,7 @@ export async function exportToCsv(results) {
             criteriaName: 'Emissions Reduction Targets',
             criteriaContent: data.climateData.emissionsReductionTargets
               .map(target => `# ${target}`)
-              .join('\n'),
-            excerpt: ''
+              .join('\n')
           });
         }
       }
@@ -271,8 +264,7 @@ export async function exportToCsv(results) {
           companyName,
           criteriaId: 'sustainability_strategy',
           criteriaName: 'Sustainability Strategy',
-          criteriaContent: `# ${data.sustainabilityStrategy.summary || ''}`,
-          excerpt: ''
+          criteriaContent: `# ${data.sustainabilityStrategy.summary || ''}`
         });
         
         if (data.sustainabilityStrategy.pillars) {
@@ -283,8 +275,7 @@ export async function exportToCsv(results) {
             criteriaName: 'Strategic Pillars',
             criteriaContent: data.sustainabilityStrategy.pillars
               .map(pillar => `# ${pillar}`)
-              .join('\n'),
-            excerpt: ''
+              .join('\n')
           });
         }
       }
@@ -297,8 +288,7 @@ export async function exportToCsv(results) {
             companyName,
             criteriaId: `initiative_${initiative}`,
             criteriaName: initiative,
-            criteriaContent: formatInitiative(details),
-            excerpt: ''
+            criteriaContent: formatInitiative(details)
           });
         });
       }
@@ -311,8 +301,7 @@ export async function exportToCsv(results) {
             companyName,
             criteriaId: `controversy_${controversy}`,
             criteriaName: controversy,
-            criteriaContent: `# ${details.description || ''}`,
-            excerpt: details.response || ''
+            criteriaContent: `# ${details.description || ''}`
           });
         });
       }
@@ -578,7 +567,6 @@ export async function exportToExcel(results) {
         // Get data if it exists, check multiple possible locations in the JSON structure
         let criteriaData = {};
         let actions = [];
-        let extracts = '';
         
         // Try to find data in various locations in the JSON structure
         if (data[criteriaId]) {
@@ -694,7 +682,7 @@ export async function exportToExcel(results) {
           debugLog(`No standard actions found for ${criteriaId}, trying to extract string values`);
           actions = [];
           for (const [key, value] of Object.entries(criteriaData)) {
-            if (typeof value === 'string' && value.trim() && !['id', 'name', 'type', 'description', 'extracts', 'summary'].includes(key)) {
+            if (typeof value === 'string' && value.trim() && !['id', 'name', 'type', 'description', 'summary'].includes(key)) {
               actions.push(value);
             } else if (Array.isArray(value) && value.length > 0) {
               actions = [...actions, ...value.filter(item => typeof item === 'string' && item.trim())];
@@ -715,30 +703,6 @@ export async function exportToExcel(results) {
         }
         
         console.log(`Found ${actions.length} actions for ${criteriaId}`);
-        
-        // Enhanced extract extraction with better fallbacks
-        if (criteriaData.extracts) {
-          extracts = criteriaData.extracts;
-        } else if (criteriaData.description) {
-          extracts = criteriaData.description;
-        } else if (criteriaData.summary) {
-          extracts = criteriaData.summary;
-        } else if (criteriaData.details) {
-          extracts = criteriaData.details;
-        } else if (criteriaData.excerpt) {
-          extracts = criteriaData.excerpt;
-        } else if (criteriaData.text) {
-          extracts = criteriaData.text;
-        } else if (criteriaData.content && typeof criteriaData.content === 'string') {
-          extracts = criteriaData.content;
-        }
-        
-        // Convert extracts to string if needed
-        if (Array.isArray(extracts)) {
-          extracts = extracts.join('\n');
-        } else if (typeof extracts !== 'string') {
-          extracts = '';
-        }
         
         // Add the criteria name (using the exact name from the industry definition)
         rowData.push(criteriaName); // This becomes action_key_X
@@ -765,33 +729,59 @@ export async function exportToExcel(results) {
       // Add carbon footprint data (indicator columns)
       rowData.push('Carbon Footprint'); // indicator_key
       
-      // Get carbon footprint data with backward compatibility
+      // Get carbon footprint data with new format (year-specific fields)
       const carbonFootprint = data.carbonFootprint || {};
-      const scope1 = carbonFootprint.scope1 || '';
-      const scope2 = carbonFootprint.scope2 || '';
-      const scope3 = carbonFootprint.scope3 || '';
-      const prevYearScope1 = carbonFootprint.previousYearScope1 || '';
-      const prevYearScope2 = carbonFootprint.previousYearScope2 || '';
-      const prevYearScope3 = carbonFootprint.previousYearScope3 || '';
-      const reducTarget = carbonFootprint.reductionTargets || '';
+      
+      // Get Scope 1 data (prioritize 2023, then 2024, then 2022, then fall back to old format)
+      const scope1_2023 = carbonFootprint.scope1_2023 || '';
+      const scope1_2024 = carbonFootprint.scope1_2024 || '';
+      const scope1_2022 = carbonFootprint.scope1_2022 || '';
+      const scope1_old = carbonFootprint.scope1 || '';
+      
+      // Use the most recent year as primary value, with fallback to old format
+      const scope1 = scope1_2023 || scope1_2024 || scope1_2022 || scope1_old || '';
+      
+      // Additional values are other years, not including the primary one
+      const additionalScope1Values = [scope1_2023, scope1_2024, scope1_2022]
+        .filter(v => v && v !== scope1); // Filter out empty values and the one we already used
       
       // Scope 1
       rowData.push('Scope 1'); // indicator_sub_key_1
       rowData.push(scope1); // indicator_sub_key_1_value_1
-      rowData.push(prevYearScope1); // indicator_sub_key_1_value_2
-      rowData.push(reducTarget); // indicator_sub_key_1_value_3
+      rowData.push(additionalScope1Values[0] || ''); // indicator_sub_key_1_value_2
+      rowData.push(additionalScope1Values[1] || ''); // indicator_sub_key_1_value_3
+      
+      // Get Scope 2 data (same approach as Scope 1)
+      const scope2_2023 = carbonFootprint.scope2_2023 || '';
+      const scope2_2024 = carbonFootprint.scope2_2024 || '';
+      const scope2_2022 = carbonFootprint.scope2_2022 || '';
+      const scope2_old = carbonFootprint.scope2 || '';
+      
+      const scope2 = scope2_2023 || scope2_2024 || scope2_2022 || scope2_old || '';
+      const additionalScope2Values = [scope2_2023, scope2_2024, scope2_2022]
+        .filter(v => v && v !== scope2);
       
       // Scope 2
       rowData.push('Scope 2'); // indicator_sub_key_2
       rowData.push(scope2); // indicator_sub_key_2_value_1
-      rowData.push(prevYearScope2); // indicator_sub_key_2_value_2
-      rowData.push(''); // indicator_sub_key_2_value_3
+      rowData.push(additionalScope2Values[0] || ''); // indicator_sub_key_2_value_2
+      rowData.push(additionalScope2Values[1] || ''); // indicator_sub_key_2_value_3
+      
+      // Get Scope 3 data (same approach as above)
+      const scope3_2023 = carbonFootprint.scope3_2023 || '';
+      const scope3_2024 = carbonFootprint.scope3_2024 || '';
+      const scope3_2022 = carbonFootprint.scope3_2022 || '';
+      const scope3_old = carbonFootprint.scope3 || '';
+      
+      const scope3 = scope3_2023 || scope3_2024 || scope3_2022 || scope3_old || '';
+      const additionalScope3Values = [scope3_2023, scope3_2024, scope3_2022]
+        .filter(v => v && v !== scope3);
       
       // Scope 3
       rowData.push('Scope 3'); // indicator_sub_key_3
       rowData.push(scope3); // indicator_sub_key_3_value_1
-      rowData.push(prevYearScope3); // indicator_sub_key_3_value_2
-      rowData.push(carbonFootprint.trends || ''); // indicator_sub_key_3_value_3
+      rowData.push(additionalScope3Values[0] || ''); // indicator_sub_key_3_value_2
+      rowData.push(additionalScope3Values[1] || ''); // indicator_sub_key_3_value_3
       
       // Add controversies and other initiatives to the 'other_achievements' column
       let otherText = data.otherInitiatives || '';
