@@ -375,24 +375,73 @@ export async function exportToExcel(results) {
     
     // Define the exact column headers as requested
     const headers = [
-      'Company ID', 
-      'Company Name', 
-      'Industry',
-      'URL',
-      'Report Year', 
-      'Report Title'
+      'company_legal_entity_name',
+      'user_email_address',
+      'user_first_name',
+      'user_last_name',
+      'company_name',
+      'business_description',
+      'sector',
+      'industry',
+      'street',
+      'zip_code',
+      'city',
+      'country',
+      'phone_number',
+      'email_address',
+      'website',
+      'founding_year',
+      'employee_range',
+      'revenue_range',
+      'contact_1_salutation',
+      'contact_1_first_name',
+      'contact_1_last_name',
+      'contact_1_role',
+      'contact_1_job_title',
+      'contact_1_email_address',
+      'contact_1_phone',
+      'contact_2_salutation',
+      'contact_2_first_name',
+      'contact_2_last_name',
+      'contact_2_role',
+      'contact_2_job_title',
+      'contact_2_email_address',
+      'contact_2_phone',
+      'report_url',
+      'reporting_period',
+      'scoring_period',
+      'abstract'
     ];
     
-    // Add 7 criteria with the exact formatting requested - using generic names
+    // Add 7 criteria with the exact formatting requested - using our specific naming pattern
     for (let i = 1; i <= 7; i++) {
-      headers.push(`Criterion ${i} name`);
-      headers.push(`Criterion ${i} solution 1`);
-      headers.push(`Criterion ${i} solution 2`);
-      headers.push(`Criterion ${i} solution 3`);
-      headers.push(`Criterion ${i} solution 4`);
-      headers.push(`Criterion ${i} solution 5`);
-      headers.push(`Criterion ${i} extracts`);
+      headers.push(`action_key_${i}`);
+      headers.push(`action_key_${i}_value_1`);
+      headers.push(`action_key_${i}_value_2`);
+      headers.push(`action_key_${i}_value_3`);
+      headers.push(`action_key_${i}_value_4`);
+      headers.push(`action_key_${i}_value_5`);
     }
+    
+    // Add carbon footprint and climate standards columns
+    headers.push('indicator_key');
+    headers.push('indicator_sub_key_1');
+    headers.push('indicator_sub_key_1_value_1');
+    headers.push('indicator_sub_key_1_value_2');
+    headers.push('indicator_sub_key_1_value_3');
+    headers.push('indicator_sub_key_2');
+    headers.push('indicator_sub_key_2_value_1');
+    headers.push('indicator_sub_key_2_value_2');
+    headers.push('indicator_sub_key_2_value_3');
+    headers.push('indicator_sub_key_3');
+    headers.push('indicator_sub_key_3_value_1');
+    headers.push('indicator_sub_key_3_value_2');
+    headers.push('indicator_sub_key_3_value_3');
+    headers.push('other_achievements');
+    headers.push('highlights_courage');
+    headers.push('highlights_action');
+    headers.push('highlights_solution');
+    headers.push('climate_standards');
     
     // Add headers to the sheet
     worksheet.addRow(headers);
@@ -416,14 +465,62 @@ export async function exportToExcel(results) {
       
       console.log(`Company: ${companyName}, Industry: ${industry}, URL: ${url}`);
       
+      // Get company details
+      const companyDetails = data.companyDetails || {};
+      const address = companyDetails.address || {};
+      const contactInfo = companyDetails.contactInfo || {};
+
       // Base row data with company information
       const rowData = [
-        companyId,
-        companyName,
-        industry,
-        url,
-        reportYear,
-        reportTitle
+        // Company legal entity name
+        companyDetails.legalEntityName || companyName || '',
+        // User information - these will be empty as they're not in the reports
+        '', // user_email_address
+        '', // user_first_name
+        '', // user_last_name
+        // Company name
+        companyName || '',
+        // Business description
+        companyDetails.businessDescription || '',
+        // Sector
+        companyDetails.sector || '',
+        // Industry
+        industry || '',
+        // Address information
+        address.street || '',
+        address.zipCode || '',
+        address.city || '',
+        address.country || '',
+        // Contact information
+        contactInfo.phoneNumber || '',
+        contactInfo.emailAddress || '',
+        contactInfo.website || url || '',
+        // Company data
+        companyDetails.foundingYear || '',
+        companyDetails.employeeRange || '',
+        companyDetails.revenueRange || '',
+        // Contact 1 information - empty as not in reports
+        '', // contact_1_salutation
+        '', // contact_1_first_name
+        '', // contact_1_last_name
+        '', // contact_1_role
+        '', // contact_1_job_title
+        '', // contact_1_email_address
+        '', // contact_1_phone
+        // Contact 2 information - empty as not in reports
+        '', // contact_2_salutation
+        '', // contact_2_first_name
+        '', // contact_2_last_name
+        '', // contact_2_role
+        '', // contact_2_job_title
+        '', // contact_2_email_address
+        '', // contact_2_phone
+        // Report information
+        url || '',
+        reportYear || '',
+        '', // scoring_period
+        // Abstract
+        data.abstract || ''
       ];
       
       // Important: Use the raw industry directly without normalization
@@ -644,7 +741,7 @@ export async function exportToExcel(results) {
         }
         
         // Add the criteria name (using the exact name from the industry definition)
-        rowData.push(criteriaName); // This becomes "Criterion X name"
+        rowData.push(criteriaName); // This becomes action_key_X
         
         // Add up to 5 solutions
         for (let j = 0; j < 5; j++) {
@@ -663,10 +760,53 @@ export async function exportToExcel(results) {
           
           console.log(`Added solution ${j+1} for ${criteriaId}: ${solution}`);
         }
-        
-        // Add the extracts
-        rowData.push(extracts);
       }
+      
+      // Add carbon footprint data (indicator columns)
+      rowData.push('Carbon Footprint'); // indicator_key
+      
+      // Scope 1
+      rowData.push('Scope 1'); // indicator_sub_key_1
+      const scope1 = data.carbonFootprint?.scope1 || '';
+      rowData.push(scope1); // indicator_sub_key_1_value_1
+      rowData.push(''); // indicator_sub_key_1_value_2
+      rowData.push(''); // indicator_sub_key_1_value_3
+      
+      // Scope 2
+      rowData.push('Scope 2'); // indicator_sub_key_2
+      const scope2 = data.carbonFootprint?.scope2 || '';
+      rowData.push(scope2); // indicator_sub_key_2_value_1
+      rowData.push(''); // indicator_sub_key_2_value_2
+      rowData.push(''); // indicator_sub_key_2_value_3
+      
+      // Scope 3
+      rowData.push('Scope 3'); // indicator_sub_key_3
+      const scope3 = data.carbonFootprint?.scope3 || '';
+      rowData.push(scope3); // indicator_sub_key_3_value_1
+      rowData.push(''); // indicator_sub_key_3_value_2
+      rowData.push(''); // indicator_sub_key_3_value_3
+      
+      // Other achievements and highlights
+      rowData.push(data.otherInitiatives || ''); // other_achievements
+      
+      // Highlights
+      rowData.push(data.highlights?.courage || ''); // highlights_courage
+      rowData.push(data.highlights?.action || ''); // highlights_action
+      rowData.push(data.highlights?.solution || ''); // highlights_solution
+      
+      // Climate standards
+      let climateStandards = '';
+      if (data.climateStandards) {
+        // Convert climate standards object to string
+        const standards = [];
+        if (data.climateStandards.iso14001 === 'Yes') standards.push('ISO 14001');
+        if (data.climateStandards.iso50001 === 'Yes') standards.push('ISO 50001');
+        if (data.climateStandards.emas === 'Yes') standards.push('EMAS');
+        if (data.climateStandards.cdp === 'Yes') standards.push('CDP');
+        if (data.climateStandards.sbti === 'Yes') standards.push('SBTi');
+        climateStandards = standards.join(', ');
+      }
+      rowData.push(climateStandards); // climate_standards
       
       // Add the row to the sheet
       worksheet.addRow(rowData);

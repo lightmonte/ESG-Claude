@@ -49,17 +49,26 @@ Extract information for EXACTLY the following ${relevantCriteria.length} ESG cri
 ${criteriaList}
 
 Your goal is to extract the following information:
-01. Company name, report year/period, and title
-02. Overall sustainability abstract (max 500 characters)
-03. Three highlights:
+01. Detailed company information:
+   - Legal entity name (full legal name of the company)
+   - Business description (what the company does)
+   - Sector and detailed industry classification
+   - Address (street, zip/postal code, city, country)
+   - Contact information (phone number, email address, website)
+   - Founding year (when the company was established)
+   - Employee range (number of employees or range)
+   - Revenue range (annual revenue or range)
+02. Company name, report year/period, and title
+03. Overall sustainability abstract (max 500 characters)
+04. Three highlights:
    - Highest entrepreneurial courage (max 400 characters)
    - Most important internal sustainability action (max 400 characters)
    - Most important customer sustainability solution (max 400 characters)
-04. Actions and solutions for each criterion
-05. Carbon footprint data (scope 1, 2, 3 and totals) for available years
-06. Climate standards compliance (ISO 14001, EMAS, ISO 50001, CDP, SBTi)
-07. Other important sustainability initiatives
-08. Any sustainability-related controversies and company responses
+05. Actions and solutions for each criterion
+06. Carbon footprint data (scope 1, 2, 3 and totals) for available years
+07. Climate standards compliance (ISO 14001, EMAS, ISO 50001, CDP, SBTi)
+08. Other important sustainability initiatives
+09. Any sustainability-related controversies and company responses
 
 For each criterion, extract:
 - Maximum ${maxActions} concrete actions/solutions the company is taking, including any supporting numbers
@@ -67,6 +76,25 @@ For each criterion, extract:
  
 Format your response as a JSON object with this structure:
 {
+  "companyDetails": {
+    "legalEntityName": "Full legal name of the company",
+    "businessDescription": "Description of the company's business",
+    "sector": "Main sector",
+    "address": {
+      "street": "Street address",
+      "zipCode": "Postal/zip code",
+      "city": "City",
+      "country": "Country"
+    },
+    "contactInfo": {
+      "phoneNumber": "Company phone number",
+      "emailAddress": "Company email",
+      "website": "Company website"
+    },
+    "foundingYear": "Year the company was founded",
+    "employeeRange": "Number of employees or range",
+    "revenueRange": "Annual revenue or range"
+  },
   "basicInformation": {
     "companyName": "Name",
     "reportYear": "Year",
@@ -108,10 +136,11 @@ CONTENT REQUIREMENTS:
 1. YOUR RESPONSE MUST INCLUDE ALL ${relevantCriteria.length} CRITERIA LISTED ABOVE WITH THEIR EXACT IDs, even if there's limited or no information for some criteria
 2. For criteria with no information, include an action with "# No specific actions found for [CRITERION NAME]" and note "No relevant information found in the report for [CRITERION NAME]" in extracts
 3. Include ONLY information explicitly stated in the document
-4. Generate the results in the document's original language (German or English) - don't translate
-5. Use original wording from the document where possible
-6. For carbon emissions, use x.xxx t CO2e format (calculate if needed)
-7. When a data point does not exist in the document, say "Not stated" in the extracts field
+4. Look carefully for company information such as legal entity name, business description, address, founding year, employee count, and revenue
+5. Generate the results in the document's original language (German or English) - don't translate
+6. Use original wording from the document where possible
+7. For carbon emissions, use x.xxx t CO2e format (calculate if needed)
+8. When a data point does not exist in the document, say "Not stated" in the extracts field
 
 FINAL VERIFICATION:
 Before submitting, verify that:

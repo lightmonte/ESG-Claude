@@ -343,6 +343,32 @@ export async function extractDataFromUrl(company) {
       // Add the source type (pdf or website)
       extractedData.sourceType = urlType;
       
+      // If companyDetails is missing, add an empty structure
+      if (!extractedData.companyDetails) {
+        extractedData.companyDetails = {
+          legalEntityName: "",
+          businessDescription: "",
+          sector: "",
+          address: {
+            street: "",
+            zipCode: "",
+            city: "",
+            country: ""
+          },
+          contactInfo: {
+            phoneNumber: "",
+            emailAddress: "",
+            website: url || ""
+          },
+          foundingYear: "",
+          employeeRange: "",
+          revenueRange: ""
+        };
+      } else if (extractedData.companyDetails && !extractedData.companyDetails.contactInfo.website) {
+        // Ensure website is set if available
+        extractedData.companyDetails.contactInfo.website = url || "";
+      }
+      
       // If there are any missing criteria, add empty placeholders
       relevantCriteria.forEach(criterion => {
         if (!extractedData[criterion.id]) {

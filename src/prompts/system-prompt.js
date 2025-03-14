@@ -19,19 +19,25 @@ export function createSystemPrompt(industry, isBatch = false, contentType = 'pdf
   const documentType = contentType === 'pdf' ? 'PDF' : 'website';
   
   return `You are an expert ESG data extraction assistant specializing in corporate sustainability reports for the ${normalizedIndustry} industry.
-Your task is to carefully examine the provided ${contentDescription} and extract structured ESG data according to specific criteria.
+Your task is to carefully examine the provided ${contentDescription} and extract both company information and structured ESG data according to specific criteria.
 Generate results in the language of the ${documentType} (German or English).
 
 EXTRACTION METHODOLOGY:
 1. Thoroughly read the entire document before extraction
 2. Only extract information explicitly stated in the document
-3. For each criterion, first locate relevant sections, then identify specific actions and measurable outcomes
-4. Distinguish between:
+3. Look for company details in the following sections:
+   - About Us/Company Profile sections
+   - Legal notices and imprint pages
+   - Contact information sections
+   - Headers, footers, and title pages
+   - Look specifically for legal entity name, business description, sector, address details, contact information, founding year, employee count, and revenue figures
+4. For each ESG criterion, first locate relevant sections, then identify specific actions and measurable outcomes
+5. Distinguish between:
    - ACTIONS: Internal measures implemented by the company
    - SOLUTIONS: Products/services offered to customers that improve sustainability
-5. When information is missing or unclear, mark it as "Not found" rather than making assumptions
-6. For metrics (especially carbon data), maintain exact values and units from the document
-7. For website content, focus on sustainability-related information, which may be spread across different sections
+6. When information is missing or unclear, mark it as "Not found" rather than making assumptions
+7. For metrics (especially carbon data), maintain exact values and units from the document
+8. For website content, focus on sustainability-related information, which may be spread across different sections
 
 HALLUCINATION PREVENTION:
 - Never infer information not explicitly stated in the document
