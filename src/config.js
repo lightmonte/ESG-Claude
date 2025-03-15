@@ -21,6 +21,7 @@ export const config = {
   claudeModel: process.env.CLAUDE_MODEL || 'claude-3-7-sonnet-20250219',
   
   // Paths
+  rootDir: path.resolve(__dirname, '..'),
   dataDir: path.resolve(__dirname, '..', process.env.DATA_DIR || './data'),
   outputDir: path.resolve(__dirname, '..', process.env.OUTPUT_DIR || './output'),
   dbPath: path.resolve(__dirname, '..', process.env.DB_PATH || './data/esg_database.sqlite')

@@ -17,7 +17,8 @@ import config from './config.js';
 import { ensureDirectoryExists, logToFile, normalizeCompanyId } from './utils.js';
 import { processAllPdfUrls } from './claude-extractor.js';
 import { processBatchCompanies, checkAndProcessCompletedBatches } from './claude-batch-extractor.js';
-import { exportAllFormats } from './exporter.js';
+import { exportDirectlyToExcel } from './direct-excel-exporter.js';
+import { diagnoseXmlExtraction, saveRawResponses } from './xml-diagnostics.js';
 import * as persistence from './lib/persistence.js';
 import tokenTracker from './lib/token-tracker.js';
 
@@ -42,6 +43,7 @@ async function loadCompanyUrls(csvPath) {
       const name = record.name || record.company_name || record.companyName || '';
       const url = record.url || record.document_url || record.documentUrl || '';
       const industry = record.industry || record.industryId || '';
+      const customPrompt = record.Prompt || record.prompt || ''; // Get custom prompt if available
       
       // Generate a consistent company ID
       const companyId = record.company_id || record.companyId || normalizeCompanyId(name);
@@ -63,7 +65,8 @@ async function loadCompanyUrls(csvPath) {
         name, 
         url,
         industry,
-        shouldUpdate
+        shouldUpdate,
+        customPrompt
       };
     }).filter(company => company.url); // Only keep records with URLs
   } catch (error) {
@@ -245,29 +248,21 @@ async function main() {
       await logToFile(`Extracted ESG data from ${extractionResults.filter(r => r.status === 'extraction_complete').length} PDF URLs, failed ${extractionResults.filter(r => r.status === 'extraction_failed').length}`, logfile);
     }
     
-    // Step 4: Export to various formats
-    console.log('Exporting results');
-    const exportResults = await exportAllFormats(extractionResults);
+    // Step 4: Run XML diagnostics to troubleshoot
+    console.log('Running XML extraction diagnostics...');
+    await diagnoseXmlExtraction(extractionResults);
+    await saveRawResponses(extractionResults);
     
-    if (exportResults.json && exportResults.json.path) {
-      console.log(`JSON output: ${exportResults.json.path}`);
-      await logToFile(`Exported to JSON: ${exportResults.json.path} (${exportResults.json.count} profiles)`, logfile);
-    } else {
-      console.log('No JSON output generated');
-    }
+    // Step 5: Export directly to Excel, bypassing JSON/CSV
+    console.log('Exporting directly to Excel...');
+    const excelExportResult = await exportDirectlyToExcel(extractionResults);
     
-    if (exportResults.csv && exportResults.csv.path) {
-      console.log(`CSV output: ${exportResults.csv.path}`);
-      await logToFile(`Exported to CSV: ${exportResults.csv.path} (${exportResults.csv.count} profiles)`, logfile);
+    if (excelExportResult && excelExportResult.success) {
+      console.log(`Excel output: ${excelExportResult.path}`);
+      await logToFile(`Exported directly to Excel: ${excelExportResult.path} (${excelExportResult.count} profiles)`, logfile);
     } else {
-      console.log('No CSV output generated');
-    }
-    
-    if (exportResults.excel && exportResults.excel.path) {
-      console.log(`Excel output: ${exportResults.excel.path}`);
-      await logToFile(`Exported to Excel: ${exportResults.excel.path} (${exportResults.excel.count} profiles)`, logfile);
-    } else {
-      console.log('No Excel output generated');
+      console.log('Direct Excel export failed:', excelExportResult?.error || 'Unknown error');
+      await logToFile(`Direct Excel export failed: ${excelExportResult?.error || 'Unknown error'}`, logfile);
     }
     
     console.log(`Log file: ${path.join(config.dataDir, logfile)}`);

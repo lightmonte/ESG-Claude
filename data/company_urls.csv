@@ -1,21 +1,176 @@
-name,url,industry,shouldUpdate
-1&1 Telecommunication,https://imagepool.1und1.ag/v2/download/nachhaltigkeitsbericht/1und1-AG_NB_2022_DE.pdf,telecommunication,FALSE
-ADM,https://www.adm.com/globalassets/sustainability/sustainability-reports/2022-reports/adm-2022-corporate-sustainability-report_final.pdf,food_processing,FALSE
-AHT,https://www.aht.at/wp-content/uploads/2022/10/AHT_ESG_Report_2022_Final_DE.pdf,ventilation,FALSE
-AQUApark Oberhausen,https://www.aquapark-oberhausen.com/nachhaltigkeit,leisure_industry,TRUE
-ARB,https://arche-reinigung.de/unternehmen/Nachhaltigkeit,commercial,TRUE
-BOK 24,https://boc24.de/pages/wir-sind-auf-dem-weg,sporting,FALSE
-BUWOG,https://www.buwog.at/nachhaltigkeit,real_estate,FALSE
-Bauer Gear Motor,https://www.bauergears.com/de-DE/energy-efficiency/energy-efficiency-resources,engines,FALSE
-Balu Bowls,https://balubowls.com/ueber-uns,jewelry,FALSE
-Biokorntakt,https://www.biokorntakt.de/unternehmen,food_wholesale,FALSE
-GOLDBECK,https://cms.goldbeck.de/fileadmin/goldbeck.de/00_newsroom/prospekte/goldbeck_sustainability-report_2022.pdf,construction,FALSE
-Bau-Fritz,https://www.baufritz.com/Dokumente/Umweltbericht/Umwelterklaerung.pdf,construction,FALSE
-PORR,https://porr-group.com/fileadmin/s_porr-group/IR/Konzernberichte/2023/PORR_Gescha__ftsbericht_2022_de_sec.pdf,construction,FALSE
-Espresso House Germany,https://cdn.sanity.io/files/0znjtmk5/productionv3/05d356751a3089056ce21cfd4b07398a772f73a3.pdf,food_retail,FALSE
-Wolff & Müller,https://www.wolff-mueller.de/fileadmin/Home_W_M/Top_Navigation/News___Medien/Medien/WM-475-478-22_Nachhaltigkeitsbericht_2022_gesamt_RZ_Web_231129.pdf,construction,FALSE
-DFH Deutsche Fertighaus,https://dfh-gruppe.de/wp-content/uploads/2024/09/DFH_Nachhaltigkeitsbericht_2018_web.pdf,construction,FALSE
-Bilfinger,https://www.bilfinger.com/fileadmin/One_Global_Website/Investors/overview/non-financial-reporting/Bilfinger-Nichtfinanzielle_Konzernerklaerung_2023.pdf,construction,FALSE
-BAUER,https://www.bauer.de/de/media/4810/download?inline,construction,FALSE
-Hünnebeck Deutschland,https://datenbank2.deutscher-nachhaltigkeitskodex.de/Profile/CompanyProfile/13778/de/2020/dnk#,construction,FALSE
-HOCHTIEF,https://www.hochtief.de/mmdbdownload?id=229173,construction,FALSE
+name,url,industry,shouldUpdate,Prompt
+1&1 Telecommunication,https://imagepool.1und1.ag/v2/download/nachhaltigkeitsbericht/1und1-AG_NB_2022_DE.pdf,telecommunication,FALSE,
+ADM,https://www.adm.com/globalassets/sustainability/sustainability-reports/2022-reports/adm-2022-corporate-sustainability-report_final.pdf,food_processing,FALSE,
+AHT,https://www.aht.at/wp-content/uploads/2022/10/AHT_ESG_Report_2022_Final_DE.pdf,ventilation,FALSE,
+AQUApark Oberhausen,https://www.aquapark-oberhausen.com/nachhaltigkeit,leisure_industry,FALSE,
+ARB,https://arche-reinigung.de/unternehmen/Nachhaltigkeit,commercial,FALSE,
+BOK 24,https://boc24.de/pages/wir-sind-auf-dem-weg,sporting,FALSE,
+BUWOG,https://www.buwog.at/nachhaltigkeit,real_estate,FALSE,
+Bauer Gear Motor,https://www.bauergears.com/de-DE/energy-efficiency/energy-efficiency-resources,engines,FALSE,
+Balu Bowls,https://balubowls.com/ueber-uns,jewelry,FALSE,
+Biokorntakt,https://www.biokorntakt.de/unternehmen,food_wholesale,FALSE,
+GOLDBECK,https://cms.goldbeck.de/fileadmin/goldbeck.de/00_newsroom/prospekte/goldbeck_sustainability-report_2022.pdf,construction,FALSE,
+Bau-Fritz,https://www.baufritz.com/Dokumente/Umweltbericht/Umwelterklaerung.pdf,construction,TRUE,"""You are an AI sustainability analyst specialized in extracting and analyzing information from company sustainability reports as PDFs. 
+Your task is to carefully examine the provided PDF content and extract specific details from the reports.
+The PDF is attached. Generate the results in the language of the PDF, German or English.
+Your goal is to extract the following information:
+01. File name
+02. Company name
+03. Overall sustainability abstract summarizing the company business and sustainability strategy, actions and impacts
+04. Three highlights for highest entrepreneurial courage, most important action and highest impact solution 
+05. Actions and solutions for the following six sustainability criteria with actions implemented internatlly in the company and solutions offered to customers for positive impact with customers:
+a) Criteria1: Buildings: these are actions and solutions for the transformation into a climate-neutral building stock incl. use of wood as a carbon storage. Typical key words for the criteria are: architecture, building materials, breeam, roof, insulation, energy-efficient refurbishment, energy performance certificate, facade, timber construction, leed, new build, insulation, construction, passive house, renovation.
+b) Criteria2: Energy efficiency: these are actions and solutions for transformation to an energy-efficient economy and society. Typical key words for the criteria are: motion detector, insulation, efficiency class, energy-efficient, energy-efficient cooling, energy efficiency, energy saving, energy consumption, heating, iso 50001, insulation, led, combined heat and power, cooling technology, low-energy building.
+c) Criteria3: Renewable energies: these are actions and solutions for the transformation to an energy system based on renewable energies. Typical key words for the criteria are: biogas, biomass, renewable energy, geothermal energy, offshore, green gas, green electricity, photovoltaics, smart meter, ppa, pv, smart grid, solar, water, wind.
+d) Criteria4: Climate-neutral operation: these are actions and solutions for the transformation to a climate-neutral company operation. Typical key words for the criteria are: co2 compensation, co2 compensation operation, co2-neutral production, co2-neutral operation, insulation of company buildings, compressed air optimization, reduce emissions, energy efficiency, energy efficiency in operation, renewable energies in operation, climate-neutral operation, climate-neutral production, cooling in operation, production with renewable energies, conversion to green electricity.
+e) Criteria5: Materials: these are actions and solutions to transform to a circular economy with sustainable, durable, reusable circular materials. Typical key words for the criteria are: biobased materials, bioplastics, biomaterials, bioeconomy, circular materials, renewable raw materials, feedstock, wood, circular materials, durable materials, pla, re-pet, recyclable materials, recyclate, secondary raw materials.
+f) Criteria6: Occupational safety and health: these are actions and solutions for occupational safety, health and safety in the company. Typical key words for the criteria are: occupational health and safety, occupational safety, occupational accidents, lost days, ehs environmen, health, safety, ergonomics, hazard prevention, protective clothing, she safety, health and environmental protection, safety officers, safety measures, safety training, stress prevention, accident prevention, accident prevention.
+g) Criteria7: Carbon footprint: these are measurement of the greenhouse gas emissions in the corporate carbon footprint. Typical key words for the criteria are: 2030, 2045, 2050, co2 equivalent, co2 emissions, co2 reduction, co2eq, co2e, corporate carbon footprint, direct emissions, indirect emissions, carbon footprint, net zero, science-based targets, scope.
+06. Company carbon footprint emissions for scope 1, scope 2, scope 3 and totals for the years 2024, 2023 and 2024
+07. Climate standards compliance Yes/No with ISO 140001, EMAS, ISO 500001, CDP A-score, SBtI 1.5ï¿½ target short or long term
+08. Other important sustainability initiatives not covered by the criteria before
+09. Controversies in the last five years, where the company had sustainability-related controversies and how the company reacted
+
+Before providing your final analysis, wrap your analysis inside <extraction_process> tags. 
+
+In this analysis:
+1. For each piece of required information:
+- Quote the relevant text from the PDF content.
+- Explain your reasoning for extracting this information called claude reasoning.
+- If the information is ambiguous or missing, explain why.
+- Convert CO2 emissions into tons in the number format x.xxx t CO2e.
+- Double-check each extracted piece of information against the original content, noting any discrepancies or uncertainties.
+- Ensure all required fields are filled or marked as 'Not found' or 'Unclear' if the information isn't available.
+
+After your analysis, present your findings using the following XML structure:
+<sustainability_analysis>
+<file_name></file_name>
+<company></company>
+<claude_reasoning></claude_reasoning>
+<abstract></abstract>
+<highlight_courage></highlight_courage>
+<highlight_action></highlight_action>
+<highlight_solution></highlight_solution>
+<criteria1_actions_solutions></criteria1_actions_solutions>
+<criteria2_actions_solutions></criteria2_actions_solutions>
+<criteria3_actions_solutions></criteria3_actions_solutions>
+<criteria4_actions_solutions></criteria4_actions_solutions>
+<criteria5_actions_solutions></criteria5_actions_solutions>
+<criteria6_actions_solutions></criteria6_actions_solutions>
+<criteria7_actions_solutions></criteria7_actions_solutions>
+<co2_scope1_2022><co2_scope1_2022>
+<co2_scope2_2022><co2_scope2_2022>
+<co2_scope3_2022><co2_scope3_2022>
+<co2_total_2022><co2_total_2022>
+<co2_scope1_2023><co2_scope1_2023>
+<co2_scope2_2023><co2_scope2_2023>
+<co2_scope3_2023><co2_scope3_2023>
+<co2_total_2023><co2_total_2023>
+<co2_scope1_2024><co2_scope1_2024>
+<co2_scope2_2024><co2_scope2_2024>
+<co2_scope3_2024><co2_scope3_2024>
+<co2_total_2024><co2_total_2024>
+<climate_standard_iso_14001></climate_standard_iso_14001>
+<climate_standard_iso_50001></climate_standard_iso_50001>
+<climate_standard_emas></climate_standard_emas>
+<climate_standard_cdp></climate_standard_cdp>
+<climate_standard_sbti></climate_standard_sbti>
+<other></other>
+<controversies></controversies>
+</sustainability_analysis>
+
+Here's an example of how your output should be structured (note that this is a generic example and should not influence your actual extracted data):
+<sustainability_analysis>
+<file_name>file_name.pdf</file_name>
+<company>Company Name</company>
+<claude_reasoning>Claude explanation for reasoning the results</claude_reasoning>
+<abstract>Summary of the business and sustainability strategy of the company in in maximum 500 characters</abstract>
+</sustainability_analysis>
+<highlight_courage>Most courageous sustainability initiative, where the company showed highest entrepreneurial courage in maximum 400 characters</highlight_courage>
+<highlight_action>Most important sustainability action internally, where the company made biggest sustainability progress internally or in the supply chain in maximum 400 characters</highlight_action>
+<highlight_solution>Most important sustainability solution for customers, where the company has biggest sustainability impact with customers in maximum 400 characters</highlight_solution>
+<criteria1_actions_solutions># action/solution1 
+# action/solution2 
+# action/solution3 
+# action/solution4 
+# action/solution5</criteria1_actions_solutions>
+<criteria2_actions_solutions># action/solution1
+# action/solution2
+# action/solution3
+# action/solution4
+# action/solution5</criteria2_actions_solutions>
+<criteria3_actions_solutions># action/solution1
+# action/solution2
+# action/solution3
+# action/solution4
+# action/solution5</criteria3_actions_solutions>
+<criteria4_actions_solutions># action/solution1
+# action/solution2
+# action/solution3
+# action/solution4
+# action/solution5</criteria4_actions_solutions>
+<criteria5_actions_solutions># action/solution1
+# action/solution2
+# action/solution3
+# action/solution4
+# action/solution5</criteria5_actions_solutions>
+<criteria6_actions_solutions>
+# action/solution1
+# action/solution2
+# action/solution3
+# action/solution4
+# action/solution5</criteria6_actions_solutions>
+<criteria7_actions_solutions>
+# action/solution1
+# action/solution2
+# action/solution3
+# action/solution4
+# action/solution5</criteria7_actions_solutions>
+<co2_scope1_2022>1.000<co2_scope1_2022>
+<co2_scope2_2022>1.000<co2_scope2_2022>
+<co2_scope3_2022>1.000<co2_scope3_2022>
+<co2_total_2022>1.000<co2_total_2022>
+<co2_scope1_2023>1.000<co2_scope1_2023>
+<co2_scope2_2023>1.000<co2_scope2_2023>
+<co2_scope3_2023>1.000<co2_scope3_2023>
+<co2_total_2023>1.000<co2_total_2023>
+<co2_scope1_2024>1.000<co2_scope1_2024>
+<co2_scope2_2024>1.000<co2_scope2_2024>
+<co2_scope3_2024>1.000<co2_scope3_2024>
+<co2_total_2024>1.000<co2_total_2024>
+<climate_standard_iso_14001>Yes or No</climate_standard_iso_14001>
+<climate_standard_iso_50001>Yes or No</climate_standard_iso_50001>
+<climate_standard_emas>Yes or No</climate_standard_emas>
+<climate_standard_cdp>Yes or No</climate_standard_cdp>
+<climate_standard_sbti>Yes or No</climate_standard_sbti>
+<other>Other important sustainability initiatives not covered by the criteria before summarized in maximum 1000 characters.</other>
+<controversies>Potential controversies in the last five years, where the company had sustainability-related controversies and how the company has reacted summarized in maximum 1000 characters.</controversies>
+
+Remember:
+- Generate the results in the language of the PDF, German or English.
+- Read through the entire content carefully before extracting information.
+- Look for clear headings or labels that indicate each piece of information.
+- The company is typically shown on the front page of the PDF or in the document name.
+- Actions are sustainability actions, which the company has implemented internally inside the company or in their supply chain with suppliers.
+- Solutions are products or services, which the company offers helping its customers to become more sustainable in the respective criteria.
+- Extract actions and solutions for a criteria and list them by importance, starting first with solutions for customers before listing actions.
+- The list items should start with #.
+- Only list actions and solutions which exist. 
+- If not a single action or solution can be found, write """"no action found"""".
+- Each list item should have not more than 150 characters.
+- Each list item should be formulated as bullet points wording in one phrase on the point.
+- Each list item should be formulated using original wording of the company from the report.
+- Carbon footprint greenhouse gas emission numbers should be converted into CO2 equivalents in tons in #.### t CO2e format.
+- The carbon footprint is usually presented a chapter called climate, climate protection or indicators.
+- In other sustainability initiatives should cover only topics not covered before by other criteria.
+- Describe only controversies, if a controversy is described in the report or in public media. Otherwise leave blank.
+
+Please proceed with your analysis and provide the extracted information in the requested format. Only the XML output is required."""""""
+PORR,https://porr-group.com/fileadmin/s_porr-group/IR/Konzernberichte/2023/PORR_Gescha__ftsbericht_2022_de_sec.pdf,construction,FALSE,
+Espresso House Germany,https://cdn.sanity.io/files/0znjtmk5/productionv3/05d356751a3089056ce21cfd4b07398a772f73a3.pdf,food_retail,FALSE,
+Wolff & Mï¿½ller,https://www.wolff-mueller.de/fileadmin/Home_W_M/Top_Navigation/News___Medien/Medien/WM-475-478-22_Nachhaltigkeitsbericht_2022_gesamt_RZ_Web_231129.pdf,construction,FALSE,
+DFH Deutsche Fertighaus,https://dfh-gruppe.de/wp-content/uploads/2024/09/DFH_Nachhaltigkeitsbericht_2018_web.pdf,construction,FALSE,
+Bilfinger,https://www.bilfinger.com/fileadmin/One_Global_Website/Investors/overview/non-financial-reporting/Bilfinger-Nichtfinanzielle_Konzernerklaerung_2023.pdf,construction,FALSE,
+BAUER,https://www.bauer.de/de/media/4810/download?inline,construction,FALSE,
+Hï¿½nnebeck Deutschland,https://datenbank2.deutscher-nachhaltigkeitskodex.de/Profile/CompanyProfile/13778/de/2020/dnk#,construction,FALSE,
+HOCHTIEF,https://www.hochtief.de/mmdbdownload?id=229173,construction,FALSE,

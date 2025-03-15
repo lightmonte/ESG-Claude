@@ -108,7 +108,7 @@ export async function createBatchExtractionRequest(companies) {
   
   // Prepare batch requests only for valid URLs
   const batchRequests = await Promise.all(validCompanies.map(async company => {
-    const { companyId, name, url, industry } = company;
+    const { companyId, name, url, industry, customPrompt } = company;
     
     // Use the industry as-is from hardcoded data
     let normalizedIndustry = industry || '';
@@ -122,17 +122,43 @@ export async function createBatchExtractionRequest(companies) {
     console.log(`Using ${relevantCriteria.length} relevant criteria for ${normalizedIndustry || 'unknown industry'}`);
     console.log('Criteria used:', criteriaNames.join(', '));
     
-    // Create the extraction prompts using the shared prompt modules
-    const sysPrompt = systemPrompt.createSystemPrompt(normalizedIndustry, true);
-    const usrPrompt = userPrompt.createUserPrompt(url, relevantCriteria, {
-      includeCriteriaDescriptions: false,
-      maxActions: 5,
-      isBatch: true
-    });
+    // Determine which prompt to use - custom or standard
+    let requestParams;
     
-    return {
-      custom_id: companyId,
-      params: {
+    if (customPrompt && customPrompt.trim()) {
+      console.log(`Using custom prompt from company_urls.csv file for ${companyId} in batch mode`);
+      // Adjust the PDF URL reference if present in the custom prompt
+      let adjustedCustomPrompt = customPrompt;
+      if (adjustedCustomPrompt.includes('The PDF is attached.')) {
+        adjustedCustomPrompt = adjustedCustomPrompt.replace('The PDF is attached.', `The PDF URL is: ${url}`);
+      }
+      
+      requestParams = {
+        model: config.claudeModel,
+        max_tokens: 4000,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: adjustedCustomPrompt
+              }
+            ]
+          }
+        ],
+        temperature: 0.2
+      };
+    } else {
+      // Create the standard extraction prompts using the shared prompt modules
+      const sysPrompt = systemPrompt.createSystemPrompt(normalizedIndustry, true);
+      const usrPrompt = userPrompt.createUserPrompt(url, relevantCriteria, {
+        includeCriteriaDescriptions: false,
+        maxActions: 5,
+        isBatch: true
+      });
+      
+      requestParams = {
         model: config.claudeModel,
         max_tokens: 4000,
         system: sysPrompt,
@@ -148,7 +174,12 @@ export async function createBatchExtractionRequest(companies) {
           }
         ],
         temperature: 0.2
-      }
+      };
+    }
+    
+    return {
+      custom_id: companyId,
+      params: requestParams
     };
   }));
   
@@ -300,8 +331,136 @@ export async function processBatchResults(batchId) {
               outputTokens
             );
             
-            // Try to extract JSON data using the shared parser
-            const parseResult = errorHandler.parseJSON(responseText);
+            // First, check if this might be XML format from a custom prompt
+            let parseResult;
+            const hasXmlStructure = responseText.includes('<sustainability_analysis>') && responseText.includes('</sustainability_analysis>');
+            
+            if (hasXmlStructure) {
+              console.log(`Detected XML structure in batch response for ${companyId}, attempting to extract`);
+              try {
+                // Extract data from XML sustainability_analysis tags
+                const xmlMatch = responseText.match(/<sustainability_analysis>[\s\S]*?<\/sustainability_analysis>/g);
+                
+                if (xmlMatch && xmlMatch.length > 0) {
+                  // Process the XML similar to the logic in claude-extractor.js
+                  const xmlContent = xmlMatch[0];
+                  
+                  // Extract fields from XML content
+                  const extractXMLValue = (fieldName) => {
+                    const regex = new RegExp(`<${fieldName}>(.*?)<\/${fieldName}>`, 's');
+                    const match = xmlContent.match(regex);
+                    return match ? match[1].trim() : '';
+                  };
+                  
+                  // Function to process action text
+                  const processActions = (text) => {
+                    if (!text || text.trim() === '') {
+                      return ['# No specific actions found'];
+                    }
+                    return text
+                      .split('#')
+                      .filter(item => item.trim())
+                      .map(item => '# ' + item.trim());
+                  };
+                  
+                  // Make sure we're capturing the correct company name
+                  const companyName = extractXMLValue('company') || company.name || companyId;
+                  
+                  // Transform the XML data to our JSON structure with proper initialization
+                  const mappedData = {
+                    basicInformation: {
+                      companyName: companyName,
+                      reportYear: new Date().getFullYear().toString(),
+                      reportTitle: extractXMLValue('file_name') || `Sustainability Report for ${companyName}`
+                    },
+                    abstract: extractXMLValue('abstract') || '',
+                    highlights: {
+                      courage: extractXMLValue('highlight_courage') || '',
+                      action: extractXMLValue('highlight_action') || '',
+                      solution: extractXMLValue('highlight_solution') || ''
+                    },
+                    buildings: {
+                      actions: processActions(extractXMLValue('criteria1_actions_solutions'))
+                    },
+                    energy_efficiency: {
+                      actions: processActions(extractXMLValue('criteria2_actions_solutions'))
+                    },
+                    renewable_energies: {
+                      actions: processActions(extractXMLValue('criteria3_actions_solutions'))
+                    },
+                    climate_neutral_operation: {
+                      actions: processActions(extractXMLValue('criteria4_actions_solutions'))
+                    },
+                    materials: {
+                      actions: processActions(extractXMLValue('criteria5_actions_solutions'))
+                    },
+                    occupational_safety_and_health: {
+                      actions: processActions(extractXMLValue('criteria6_actions_solutions'))
+                    },
+                    carbon_footprint: {
+                      actions: processActions(extractXMLValue('criteria7_actions_solutions'))
+                    },
+                    carbonFootprint: {
+                      scope1_2022: extractXMLValue('co2_scope1_2022') || '',
+                      scope2_2022: extractXMLValue('co2_scope2_2022') || '',
+                      scope3_2022: extractXMLValue('co2_scope3_2022') || '',
+                      total_2022: extractXMLValue('co2_total_2022') || '',
+                      scope1_2023: extractXMLValue('co2_scope1_2023') || '',
+                      scope2_2023: extractXMLValue('co2_scope2_2023') || '',
+                      scope3_2023: extractXMLValue('co2_scope3_2023') || '',
+                      total_2023: extractXMLValue('co2_total_2023') || '',
+                      scope1_2024: extractXMLValue('co2_scope1_2024') || '',
+                      scope2_2024: extractXMLValue('co2_scope2_2024') || '',
+                      scope3_2024: extractXMLValue('co2_scope3_2024') || '',
+                      total_2024: extractXMLValue('co2_total_2024') || ''
+                    },
+                    climateStandards: {
+                      iso14001: extractXMLValue('climate_standard_iso_14001') || 'No',
+                      iso50001: extractXMLValue('climate_standard_iso_50001') || 'No',
+                      emas: extractXMLValue('climate_standard_emas') || 'No',
+                      cdp: extractXMLValue('climate_standard_cdp') || 'No',
+                      sbti: extractXMLValue('climate_standard_sbti') || 'No'
+                    },
+                    otherInitiatives: extractXMLValue('other') || '',
+                    controversies: extractXMLValue('controversies') || '',
+                    companyDetails: {
+                      legalEntityName: extractXMLValue('company') || companyName,
+                      businessDescription: '',
+                      sector: company.industry || '',
+                      address: {
+                        street: '',
+                        zipCode: '',
+                        city: '',
+                        country: ''
+                      },
+                      contactInfo: {
+                        phoneNumber: '',
+                        emailAddress: '',
+                        website: company.url || ''
+                      },
+                      foundingYear: '',
+                      employeeRange: '',
+                      revenueRange: ''
+                    }
+                  };
+                  
+                  parseResult = {
+                    success: true,
+                    data: mappedData
+                  };
+                } else {
+                  // Fall back to standard JSON parser if XML structure not found
+                  parseResult = errorHandler.parseJSON(responseText);
+                }
+              } catch (xmlError) {
+                console.error(`Error parsing XML in batch response for ${companyId}: ${xmlError.message}`);
+                // Fall back to standard JSON parser
+                parseResult = errorHandler.parseJSON(responseText);
+              }
+            } else {
+              // Use the standard JSON parser
+              parseResult = errorHandler.parseJSON(responseText);
+            }
             
             if (parseResult.success) {
               const extractedData = parseResult.data;

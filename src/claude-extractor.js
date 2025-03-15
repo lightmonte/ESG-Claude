@@ -15,6 +15,7 @@ import * as persistence from './lib/persistence.js';
 import esgCriteria from './lib/esg-criteria.js';
 import errorHandler from './lib/error-handler.js';
 import systemPrompt from './prompts/system-prompt.js';
+import industryPrompts from './lib/data/industry-prompts.js';
 import userPrompt from './prompts/user-prompt.js';
 import websiteExtractor from './lib/extractors/website-extractor.js';
 
@@ -58,7 +59,7 @@ async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 2000) {
  * Extract structured ESG data from a source (PDF URL or website)
  */
 export async function extractDataFromUrl(company) {
-  const { companyId, name, url, industry, shouldUpdate } = company;
+  const { companyId, name, url, industry, shouldUpdate, customPrompt } = company;
   
   // Skip if URL is missing
   if (!url) {
@@ -113,9 +114,9 @@ export async function extractDataFromUrl(company) {
     }
     console.log(`Industry: ${industry || 'not specified'}`);
     
-    // Use the industry as-is from the hardcoded data
-    let normalizedIndustry = industry || '';
-    console.log(`Using industry: ${normalizedIndustry}`);
+    // Normalize the industry to lowercase for better matching
+    let normalizedIndustry = (industry || '').toLowerCase().trim();
+    console.log(`Using normalized industry: '${normalizedIndustry}'`);
     
     // Get industry-specific criteria from the hardcoded data
     const relevantCriteria = await esgCriteria.getIndustryCriteria(normalizedIndustry);
@@ -177,9 +178,62 @@ export async function extractDataFromUrl(company) {
     
     console.log(`Sending prompt to Claude for ${companyId}...`);
     
-    // Send the request to Claude with URL in the prompt, with retry logic
-    const response = await retryWithBackoff(async () => {
-      return await anthropic.messages.create({
+    // First check if we have a custom prompt in the company_urls.csv file
+    // Second check if we have a specialized prompt for this industry
+    // Finally fall back to standard prompts
+    
+    const industrySpecificPrompt = await industryPrompts.getIndustryPrompt(normalizedIndustry, url);
+    
+    // Determine which prompt to use, in order of priority: custom > industry-specific > standard
+    let apiRequest;
+    
+    if (customPrompt && customPrompt.trim()) {
+      console.log(`Using custom prompt from company_urls.csv file for ${companyId}`);
+      // Adjust the PDF URL reference if present in the custom prompt
+      let adjustedCustomPrompt = customPrompt;
+      if (adjustedCustomPrompt.includes('The PDF is attached.')) {
+        adjustedCustomPrompt = adjustedCustomPrompt.replace('The PDF is attached.', `The PDF URL is: ${url}`);
+      }
+      
+      apiRequest = {
+        model: config.claudeModel,
+        max_tokens: 8000,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: adjustedCustomPrompt
+              }
+            ]
+          }
+        ],
+        temperature: 0.2
+      };
+    } else if (industrySpecificPrompt) {
+      console.log(`Using specialized prompt for ${normalizedIndustry} industry`);
+      // Use the industry-specific prompt directly
+      apiRequest = {
+        model: config.claudeModel,
+        max_tokens: 8000,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: industrySpecificPrompt
+              }
+            ]
+          }
+        ],
+        temperature: 0.2
+      };
+    } else {
+      // Use the standard system + user prompt approach
+      console.log(`Using standard prompts for ${normalizedIndustry} industry`);
+      apiRequest = {
         model: config.claudeModel,
         max_tokens: 4000,
         system: sysPrompt,
@@ -195,12 +249,16 @@ export async function extractDataFromUrl(company) {
           }
         ],
         temperature: 0.2
-      });
+      };
+    }
+    
+    // Send the request to Claude with URL in the prompt, with retry logic
+    const response = await retryWithBackoff(async () => {
+      return await anthropic.messages.create(apiRequest);
     });
     
     // Record token usage
     tokenTracker.recordClaudeExtractionUsage(companyId, response);
-    
     // Log token usage summary
     console.log(`Token usage for ${companyId}: ${response.usage?.input_tokens || 0} input + ${response.usage?.output_tokens || 0} output tokens`);
     await logToFile(`Token usage for ${companyId}: ${response.usage?.input_tokens || 0} input + ${response.usage?.output_tokens || 0} output tokens`);
@@ -226,13 +284,189 @@ export async function extractDataFromUrl(company) {
     let parseSuccess = false;
     let parseErrors = [];
     
-    // Strategy 1: Simple JSON.parse if it's already valid JSON
-    try {
-      const trimmedResponse = responseText.trim();
-      if (trimmedResponse.startsWith('{') && trimmedResponse.endsWith('}')) {
-        extractedJson = JSON.parse(trimmedResponse);
+    // Check if this is an industry-specific prompt or custom prompt with XML structure
+    if (industrySpecificPrompt || (customPrompt && customPrompt.includes('<sustainability_analysis>'))) {
+      console.log(`Attempting to extract XML structure for ${companyId} using industry-specific format...`);
+      try {
+        // Extract data from XML sustainability_analysis tags
+        const xmlMatch = responseText.match(/<sustainability_analysis>[\s\S]*?<\/sustainability_analysis>/g);
+        
+        // Initialize xmlContent variable to hold the XML data
+        let xmlContent;
+        
+        // If we don't find the expected tag structure, search more broadly
+        if (!xmlMatch || xmlMatch.length === 0) {
+          console.log(`Could not find <sustainability_analysis> tags in response for ${companyId}, searching for individual tags...`);
+          
+          // Try to extract individual tags instead
+          const extractTag = (tagName) => {
+            const regex = new RegExp(`<${tagName}>(.*?)<\/${tagName}>`, 's');
+            const match = responseText.match(regex);
+            return match ? match[1].trim() : '';
+          };
+          
+          // Create a synthetic XML content from individual tags
+          xmlContent = `<sustainability_analysis>
+            <file_name>${extractTag('file_name')}</file_name>
+            <company>${extractTag('company')}</company>
+            <abstract>${extractTag('abstract')}</abstract>
+            <highlight_courage>${extractTag('highlight_courage')}</highlight_courage>
+            <highlight_action>${extractTag('highlight_action')}</highlight_action>
+            <highlight_solution>${extractTag('highlight_solution')}</highlight_solution>
+            <criteria1_actions_solutions>${extractTag('criteria1_actions_solutions')}</criteria1_actions_solutions>
+            <criteria2_actions_solutions>${extractTag('criteria2_actions_solutions')}</criteria2_actions_solutions>
+            <criteria3_actions_solutions>${extractTag('criteria3_actions_solutions')}</criteria3_actions_solutions>
+            <criteria4_actions_solutions>${extractTag('criteria4_actions_solutions')}</criteria4_actions_solutions>
+            <criteria5_actions_solutions>${extractTag('criteria5_actions_solutions')}</criteria5_actions_solutions>
+            <criteria6_actions_solutions>${extractTag('criteria6_actions_solutions')}</criteria6_actions_solutions>
+            <criteria7_actions_solutions>${extractTag('criteria7_actions_solutions')}</criteria7_actions_solutions>
+          </sustainability_analysis>`;
+          
+          console.log(`Created synthetic XML content for ${companyId}`);
+        } else {
+          xmlContent = xmlMatch[0];
+          console.log(`Found XML content for ${companyId}`);
+        }
+        
+        // Extract fields from XML content
+        const extractXMLValue = (fieldName) => {
+          const regex = new RegExp(`<${fieldName}>(.*?)<\/${fieldName}>`, 's');
+          const match = xmlContent.match(regex);
+          return match ? match[1].trim() : '';
+        };
+        
+        // Function to process action text
+        const processActions = (text) => {
+          if (!text || text.trim() === '') {
+            return ['# No specific actions found'];
+          }
+          return text
+            .split('#')
+            .filter(item => item.trim())
+            .map(item => '# ' + item.trim());
+        };
+        
+        // Make sure we're capturing the correct company name
+        const companyName = extractXMLValue('company') || name || companyId;
+        
+        // Transform the XML data to our JSON structure with proper initialization
+        const mappedData = {
+          basicInformation: {
+            companyName: companyName,
+            reportYear: new Date().getFullYear().toString(),
+            reportTitle: extractXMLValue('file_name') || `Sustainability Report for ${companyName}`
+          },
+          abstract: extractXMLValue('abstract') || '',
+          highlights: {
+            courage: extractXMLValue('highlight_courage') || '',
+            action: extractXMLValue('highlight_action') || '',
+            solution: extractXMLValue('highlight_solution') || ''
+          },
+          /* For construction industry, we map the criteria as follows:
+            criteria1 = buildings (sustainable construction)
+            criteria2 = energy_efficiency
+            criteria3 = renewable_energies
+            criteria4 = climate_neutral_operation
+            criteria5 = materials (sustainable materials)
+            criteria6 = occupational_safety_and_health
+            criteria7 = carbon_footprint
+          */
+          // Map the criteria fields to our expected structure - these fields match esg-criteria.js
+          buildings: {
+            actions: processActions(extractXMLValue('criteria1_actions_solutions'))
+          },
+          energy_efficiency: {
+            actions: processActions(extractXMLValue('criteria2_actions_solutions'))
+          },
+          renewable_energies: {
+            actions: processActions(extractXMLValue('criteria3_actions_solutions'))
+          },
+          climate_neutral_operation: {
+            actions: processActions(extractXMLValue('criteria4_actions_solutions'))
+          },
+          materials: {
+            actions: processActions(extractXMLValue('criteria5_actions_solutions'))
+          },
+          occupational_safety_and_health: {
+            actions: processActions(extractXMLValue('criteria6_actions_solutions'))
+          },
+          carbon_footprint: {
+            actions: processActions(extractXMLValue('criteria7_actions_solutions'))
+          }
+        };
+
+        // Add carbon footprint data with default empty strings
+        mappedData.carbonFootprint = {
+          scope1_2022: extractXMLValue('co2_scope1_2022') || '',
+          scope2_2022: extractXMLValue('co2_scope2_2022') || '',
+          scope3_2022: extractXMLValue('co2_scope3_2022') || '',
+          total_2022: extractXMLValue('co2_total_2022') || '',
+          scope1_2023: extractXMLValue('co2_scope1_2023') || '',
+          scope2_2023: extractXMLValue('co2_scope2_2023') || '',
+          scope3_2023: extractXMLValue('co2_scope3_2023') || '',
+          total_2023: extractXMLValue('co2_total_2023') || '',
+          scope1_2024: extractXMLValue('co2_scope1_2024') || '',
+          scope2_2024: extractXMLValue('co2_scope2_2024') || '',
+          scope3_2024: extractXMLValue('co2_scope3_2024') || '',
+          total_2024: extractXMLValue('co2_total_2024') || ''
+        };
+
+        // Add climate standards with default values
+        mappedData.climateStandards = {
+          iso14001: extractXMLValue('climate_standard_iso_14001') || 'No',
+          iso50001: extractXMLValue('climate_standard_iso_50001') || 'No',
+          emas: extractXMLValue('climate_standard_emas') || 'No',
+          cdp: extractXMLValue('climate_standard_cdp') || 'No',
+          sbti: extractXMLValue('climate_standard_sbti') || 'No'
+        };
+
+        // Add other info and controversies with defaults
+        mappedData.otherInitiatives = extractXMLValue('other') || '';
+        mappedData.controversies = extractXMLValue('controversies') || '';
+        
+        // Add company details with defaults to avoid null values
+        mappedData.companyDetails = {
+          legalEntityName: extractXMLValue('company') || companyName,
+          businessDescription: '',
+          sector: 'Construction',
+          address: {
+            street: '',
+            zipCode: '',
+            city: '',
+            country: ''
+          },
+          contactInfo: {
+            phoneNumber: '',
+            emailAddress: '',
+            website: url || ''
+          },
+          foundingYear: '',
+          employeeRange: '',
+          revenueRange: ''
+        };
+        
+        extractedJson = mappedData;
         parseSuccess = true;
-        console.log(`Successfully parsed JSON directly for ${companyId}`);
+        console.log(`Successfully extracted XML data for ${companyId} with industry-specific format`);
+        
+        // Make sure to save the raw response for direct access later
+        result.rawResponse = responseText;
+      } catch (xmlError) {
+        console.error(`Error parsing XML: ${xmlError.message}`);
+        parseErrors.push(`XML parsing: ${xmlError.message}`);
+      }
+    }
+    
+    // Strategy 1: Simple JSON.parse if it's already valid JSON and not already parsed via XML
+    try {
+      // Skip if we already parsed via XML
+      if (!parseSuccess) {
+        const trimmedResponse = responseText.trim();
+        if (trimmedResponse.startsWith('{') && trimmedResponse.endsWith('}')) {
+          extractedJson = JSON.parse(trimmedResponse);
+          parseSuccess = true;
+          console.log(`Successfully parsed JSON directly for ${companyId}`);
+        }
       }
     } catch (parseError) {
       parseErrors.push(`Direct JSON parsing: ${parseError.message}`);
@@ -240,7 +474,7 @@ export async function extractDataFromUrl(company) {
     }
     
     // Strategy 2: Try to extract JSON from markdown code blocks (more aggressive matching)
-    if (!parseSuccess) {
+    if (!parseSuccess && !industrySpecificPrompt) {
       try {
         // Match both ```json and ``` format code blocks
         const jsonMatches = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/g);
@@ -272,7 +506,7 @@ export async function extractDataFromUrl(company) {
     }
     
     // Strategy 3: Try to extract anything that looks like a complete JSON object
-    if (!parseSuccess) {
+    if (!parseSuccess && !industrySpecificPrompt) {
       try {
         // Find all potential JSON objects - looking for balanced {} with at least some content
         const potentialObjects = [];
@@ -316,7 +550,7 @@ export async function extractDataFromUrl(company) {
     }
     
     // Strategy 4: Use the shared parser as a fallback
-    if (!parseSuccess) {
+    if (!parseSuccess && !industrySpecificPrompt) {
       console.log(`Falling back to shared parser for ${companyId}...`);
       const parseResult = errorHandler.parseJSON(responseText);
       parseSuccess = parseResult.success;
@@ -353,7 +587,13 @@ export async function extractDataFromUrl(company) {
         }
       });
       
-      console.log(`Successfully extracted ESG data for ${companyId}`);
+      // For construction industry, always set the industry and sourceType
+          extractedData.industry = normalizedIndustry;
+          extractedData.sourceType = urlType;
+          
+          // Log successful extraction with debug information
+          console.log(`Successfully extracted ESG data for ${companyId} using industry-specific XML format`);
+          console.log(`Fields found: ${Object.keys(extractedData).join(', ')}`);
       
       // Save extracted data to file
       const outputDir = path.join(config.outputDir, 'extracted');
@@ -376,6 +616,7 @@ export async function extractDataFromUrl(company) {
         industry: normalizedIndustry,
         extractedData,
         sourceType: urlType,
+        rawResponse: responseText,  // Always include the raw response
         status: 'extraction_complete'
       };
     } else {
